@@ -38,6 +38,12 @@ from .serializers import (
     UserUpdateSerializer,
     VerifyOTPSerializer,
 )
+from .schema import (
+    send_otp_schema,
+    verify_otp_schema,
+    me_get_schema,
+    me_put_schema,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -89,6 +95,7 @@ def _send_otp_sms(phone: str, code: str) -> None:
 # View'lar
 # ---------------------------------------------------------------------------
 
+@send_otp_schema
 class SendOTPView(APIView):
     """
     POST /api/auth/send-otp/
@@ -139,6 +146,7 @@ class SendOTPView(APIView):
         return Response(response_data, status=status.HTTP_200_OK)
 
 
+@verify_otp_schema
 class VerifyOTPView(APIView):
     """
     POST /api/auth/verify-otp/
@@ -239,6 +247,7 @@ class MeView(APIView):
 
     permission_classes = [IsAuthenticated]
 
+    @me_get_schema
     def get(self, request: Request) -> Response:
         user = request.user
 
@@ -249,6 +258,7 @@ class MeView(APIView):
 
         return Response(data, status=status.HTTP_200_OK)
 
+    @me_put_schema
     def put(self, request: Request) -> Response:
         serializer = UserUpdateSerializer(
             request.user,

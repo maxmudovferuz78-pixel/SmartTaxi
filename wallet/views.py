@@ -20,6 +20,7 @@ from rest_framework.views import APIView
 
 from accounts.permissions import IsDriver
 
+from wallet.schema import wallet_me_schema, transactions_schema
 from .models import Transaction, Wallet
 from .serializers import TransactionSerializer, WalletSerializer
 
@@ -29,6 +30,7 @@ logger = logging.getLogger(__name__)
 _TRANSACTION_PAGE_SIZE = 20
 
 
+@wallet_me_schema
 class WalletMeView(APIView):
     """
     GET /api/wallet/me/
@@ -79,6 +81,7 @@ class WalletMeView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
+@transactions_schema
 class TransactionListView(APIView):
     """
     GET /api/wallet/transactions/

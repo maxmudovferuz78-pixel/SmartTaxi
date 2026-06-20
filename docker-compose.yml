@@ -1,0 +1,134 @@
+
+# ============================================================
+# SmartTaxi — Docker Compose
+#
+# Servislar:
+#   db       — PostgreSQL 15
+#   redis    — Redis 7 (Celery broker + Channel Layer + Cache)
+#   web      — Django (Daphne ASGI: HTTP + WebSocket)
+#   worker   — Celery worker
+#   beat     — Celery beat (periodic tasks)
+#
+# Ishga tushirish:
+#   docker compose up --build
+#
+# Migration:
+#   docker compose exec web python manage.py migrate
+#
+# Superuser:
+#   docker compose exec web python manage.py createsuperuser
+#
+# Swagger UI:
+#   http://localhost:8000/api/docs/
+# ============================================================
+
+services:
+
+  # ------------------------------------------------------------------
+  # PostgreSQL
+  # ------------------------------------------------------------------
+  db:
+    image: postgres:15-alpine
+    restart: unless-stopped
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      POSTGRES_DB:       ${DB_NAME:-smarttaxi_db}
+      POSTGRES_USER:     ${DB_USER:-smarttaxi_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-strongpassword}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-smarttaxi_user}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ------------------------------------------------------------------
+  # Redis
+  # ------------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ------------------------------------------------------------------
+  # Django (Daphne ASGI)
+  # ------------------------------------------------------------------
+  web:
+    build: .
+    restart: unless-stopped
+    command: >
+      sh -c "python manage.py migrate --noinput &&
+             python manage.py collectstatic --noinput &&
+             daphne -b 0.0.0.0 -p 8000 config.asgi:application"
+    volumes:
+      - .:/app
+      - static_volume:/app/staticfiles
+      - media_volume:/app/media
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings.development
+      DB_HOST: db
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # ------------------------------------------------------------------
+  # Celery Worker
+  # ------------------------------------------------------------------
+  worker:
+    build: .
+    restart: unless-stopped
+    command: celery -A config worker -l info -c 4
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings.development
+      DB_HOST: db
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # ------------------------------------------------------------------
+  # Celery Beat (periodic tasks)
+  # ------------------------------------------------------------------
+  beat:
+    build: .
+    restart: unless-stopped
+    command: >
+      celery -A config beat -l info
+      --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings.development
+      DB_HOST: db
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      - db
+      - redis
+      - worker
+
+volumes:
+  postgres_data:
+  redis_data:
+  static_volume:
+  media_volume:

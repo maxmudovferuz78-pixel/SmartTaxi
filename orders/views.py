@@ -33,10 +33,16 @@ from .serializers import (
     OrderListSerializer,
     SetStatusSerializer,
 )
+from .schema import (
+    order_viewset_schema,
+    set_status_schema,
+    assign_driver_schema,
+)
 
 logger = logging.getLogger(__name__)
 
 
+@order_viewset_schema
 class OrderViewSet(viewsets.ModelViewSet):
     """
     Buyurtmalar uchun to'liq CRUD ViewSet.
@@ -145,6 +151,7 @@ class OrderViewSet(viewsets.ModelViewSet):
     # set_status  -- haydovchi FSM orqali status o'zgartiradi
     # ------------------------------------------------------------------
 
+    @set_status_schema
     @action(
         detail=True,
         methods=["patch"],
@@ -241,6 +248,7 @@ class OrderViewSet(viewsets.ModelViewSet):
     # assign_driver  -- operator haydovchi biriktiradi
     # ------------------------------------------------------------------
 
+    @assign_driver_schema
     @action(
         detail=True,
         methods=["patch"],
