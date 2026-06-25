@@ -1,0 +1,147 @@
+/* SmartTaxi — main.css */
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #1A1A2E; }
+::-webkit-scrollbar-thumb { background: #F5A623; border-radius: 3px; }
+
+/* Card */
+.card {
+  background: #16213E;
+  border: 1px solid #0F3460;
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+/* Badge */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.badge-new      { background:#1D4ED8; color:#fff; }
+.badge-accepted { background:#7C3AED; color:#fff; }
+.badge-arrived  { background:#D97706; color:#fff; }
+.badge-started  { background:#0284C7; color:#fff; }
+.badge-done     { background:#059669; color:#fff; }
+.badge-cancelled{ background:#DC2626; color:#fff; }
+.badge-online   { background:#059669; color:#fff; }
+.badge-offline  { background:#6B7280; color:#fff; }
+
+/* Button */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.5rem 1.25rem;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.875rem;
+  transition: opacity 0.15s, transform 0.1s;
+  cursor: pointer;
+  border: none;
+  outline: none;
+}
+.btn:hover  { opacity: 0.88; }
+.btn:active { transform: scale(0.97); }
+.btn-primary  { background: #F5A623; color: #1A1A2E; }
+.btn-danger   { background: #EF4444; color: #fff; }
+.btn-outline  { background: transparent; border: 1px solid #F5A623; color: #F5A623; }
+.btn-ghost    { background: transparent; color: #9CA3AF; }
+.btn-success  { background: #10B981; color: #fff; }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* Input */
+.input {
+  width: 100%;
+  background: #0F3460;
+  border: 1px solid #1E3A5F;
+  border-radius: 8px;
+  padding: 0.6rem 1rem;
+  color: #fff;
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.input:focus  { border-color: #F5A623; }
+.input::placeholder { color: #6B7280; }
+
+/* Table */
+.tbl { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+.tbl th { background: #0F3460; color: #9CA3AF; font-weight: 600; text-align: left; padding: 0.75rem 1rem; }
+.tbl td { padding: 0.75rem 1rem; border-bottom: 1px solid #0F3460; }
+.tbl tr:hover td { background: rgba(255,255,255,0.03); }
+
+/* Sidebar */
+.sidebar {
+  position: fixed; left: 0; top: 0; bottom: 0;
+  width: 240px;
+  background: #16213E;
+  border-right: 1px solid #0F3460;
+  padding: 1.5rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  overflow-y: auto;
+  z-index: 30;
+}
+.sidebar-link {
+  display: flex; align-items: center; gap: 0.75rem;
+  padding: 0.6rem 1rem;
+  border-radius: 8px;
+  color: #9CA3AF;
+  text-decoration: none;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: background 0.15s, color 0.15s;
+}
+.sidebar-link:hover, .sidebar-link.active {
+  background: #0F3460; color: #F5A623;
+}
+.sidebar-content { margin-left: 240px; min-height: 100vh; padding: 1.5rem; }
+
+/* Stat card */
+.stat-card {
+  background: #16213E;
+  border: 1px solid #0F3460;
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+}
+.stat-card .label { color: #9CA3AF; font-size: 0.8rem; font-weight: 500; }
+.stat-card .value { font-size: 1.75rem; font-weight: 700; color: #F5A623; margin-top: 4px; }
+
+/* Toast */
+.toast-success { background: #059669; color: #fff; }
+.toast-error   { background: #DC2626; color: #fff; }
+.toast-info    { background: #2563EB; color: #fff; }
+
+/* Spinner */
+.spinner {
+  border: 3px solid #0F3460;
+  border-top-color: #F5A623;
+  border-radius: 50%;
+  width: 32px; height: 32px;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* OTP input group */
+.otp-input {
+  width: 3rem; height: 3.5rem;
+  text-align: center;
+  font-size: 1.5rem;
+  font-weight: 700;
+  background: #0F3460;
+  border: 2px solid #1E3A5F;
+  border-radius: 10px;
+  color: #fff;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.otp-input:focus { border-color: #F5A623; }

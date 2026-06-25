@@ -1,0 +1,143 @@
+{% extends "shared/base.html" %}
+{% block title %}Admin Panel — SmartTaxi{% endblock %}
+{% block navbar %}{% endblock %}
+{% block main_class %}{% endblock %}
+
+{% block content %}
+<aside class="sidebar">
+  <div class="text-primary font-bold text-lg mb-6 px-2">🚕 Admin</div>
+  <a href="/admin/" class="sidebar-link active">📊 Dashboard</a>
+  <a href="/admin/drivers/" class="sidebar-link">🚗 Haydovchilar</a>
+  <a href="/admin/orders/" class="sidebar-link">📋 Buyurtmalar</a>
+  <a href="/admin/tariffs/" class="sidebar-link">💰 Tariflar</a>
+  <div class="mt-auto pt-4 border-t border-dark-border">
+    <button onclick="logout()" class="sidebar-link w-full text-left text-danger hover:bg-red-900/20">🚪 Chiqish</button>
+  </div>
+</aside>
+
+<div class="sidebar-content">
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="text-xl font-bold">📊 Dashboard</h1>
+    <button onclick="refreshAll()" class="btn btn-outline text-sm">🔄 Yangilash</button>
+  </div>
+
+  <!-- Stats row -->
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+    <div class="stat-card">
+      <div class="label">Jami haydovchilar</div>
+      <div class="value" id="stat-drivers">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Online haydovchilar</div>
+      <div class="value text-success" id="stat-online">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Bugungi buyurtmalar</div>
+      <div class="value" id="stat-orders">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Yangi / Kutilmoqda</div>
+      <div class="value text-info" id="stat-new">—</div>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <!-- Online drivers -->
+    <div class="card">
+      <h2 class="font-semibold mb-4">🟢 Online haydovchilar</h2>
+      <div id="online-loading" class="flex justify-center py-6"><div class="spinner"></div></div>
+      <div id="online-list" class="hidden space-y-2"></div>
+      <p id="online-empty" class="text-gray-500 text-center py-4 hidden">Online haydovchi yo'q</p>
+    </div>
+
+    <!-- New orders -->
+    <div class="card">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="font-semibold">🆕 Yangi buyurtmalar</h2>
+        <a href="/admin/orders/" class="text-primary text-sm hover:underline">Barchasi →</a>
+      </div>
+      <div id="new-orders-loading" class="flex justify-center py-6"><div class="spinner"></div></div>
+      <div id="new-orders-list" class="hidden space-y-2"></div>
+      <p id="new-orders-empty" class="text-gray-500 text-center py-4 hidden">Yangi buyurtma yo'q</p>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  if (!requireAuth(['admin','operator'])) return;
+  refreshAll();
+  // Har 30 soniyada yangilash
+  setInterval(refreshAll, 30000);
+});
+
+async function refreshAll() {
+  await Promise.all([loadOnlineDrivers(), loadNewOrders()]);
+}
+
+async function loadOnlineDrivers() {
+  const loading = document.getElementById('online-loading');
+  const list    = document.getElementById('online-list');
+  const empty   = document.getElementById('online-empty');
+  loading.classList.remove('hidden'); list.classList.add('hidden'); empty.classList.add('hidden');
+
+  try {
+    const res = await DriversAPI.list({ is_online: true, is_active: true });
+    const drivers = res.results || res;
+    document.getElementById('stat-online').textContent = drivers.length;
+
+    loading.classList.add('hidden');
+    if (!drivers.length) { empty.classList.remove('hidden'); return; }
+    list.classList.remove('hidden');
+    list.innerHTML = drivers.map(d => `
+      <div class="flex items-center justify-between py-2 border-b border-dark-border last:border-0">
+        <div>
+          <span class="font-medium text-sm">${d.user?.first_name || ''} ${d.user?.last_name || ''}</span>
+          <span class="text-gray-400 text-xs ml-2">${d.car_number || ''}</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="badge badge-${d.car_type}">${carTypeLabel(d.car_type)}</span>
+          <span class="badge badge-online">Online</span>
+        </div>
+      </div>
+    `).join('');
+  } catch (e) {
+    loading.classList.add('hidden');
+    showToast(e.message, 'error');
+  }
+}
+
+async function loadNewOrders() {
+  const loading = document.getElementById('new-orders-loading');
+  const list    = document.getElementById('new-orders-list');
+  const empty   = document.getElementById('new-orders-empty');
+  loading.classList.remove('hidden'); list.classList.add('hidden'); empty.classList.add('hidden');
+
+  try {
+    const res    = await OrdersAPI.list({ status: 'new' });
+    const orders = res.results || res;
+    document.getElementById('stat-new').textContent = orders.length;
+
+    loading.classList.add('hidden');
+    if (!orders.length) { empty.classList.remove('hidden'); return; }
+    list.classList.remove('hidden');
+    list.innerHTML = orders.map(o => `
+      <div class="flex items-center justify-between py-2 border-b border-dark-border last:border-0">
+        <div>
+          <span class="font-mono text-primary text-sm">#${o.id}</span>
+          <p class="text-xs text-gray-400 mt-0.5">${o.to_address || '—'}</p>
+        </div>
+        <a href="/admin/orders/" class="btn btn-primary text-xs px-3 py-1">Biriktir</a>
+      </div>
+    `).join('');
+  } catch (e) {
+    loading.classList.add('hidden');
+    showToast(e.message, 'error');
+  }
+}
+
+function carTypeLabel(t) { return {start:'Start',comfort:'Comfort',cargo:'Cargo'}[t]||t; }
+</script>
+{% endblock %}

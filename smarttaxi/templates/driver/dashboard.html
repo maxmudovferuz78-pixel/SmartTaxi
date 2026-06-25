@@ -1,0 +1,217 @@
+{% extends "shared/base.html" %}
+{% block title %}Haydovchi panel — SmartTaxi{% endblock %}
+{% block navbar %}{% endblock %}
+
+{% block main_class %}{% endblock %}
+
+{% block content %}
+<!-- Sidebar -->
+<aside class="sidebar">
+  <div class="text-primary font-bold text-lg mb-6 px-2">🚕 SmartTaxi</div>
+  <a href="/driver/" class="sidebar-link active">🏠 Asosiy</a>
+  <a href="/driver/orders/" class="sidebar-link">📋 Buyurtmalar</a>
+  <a href="/driver/wallet/" class="sidebar-link">💳 Hamyon</a>
+  <a href="/driver/profile/" class="sidebar-link">👤 Profil</a>
+  <div class="mt-auto pt-4 border-t border-dark-border">
+    <button onclick="logout()" class="sidebar-link w-full text-left text-danger hover:bg-red-900/20">
+      🚪 Chiqish
+    </button>
+  </div>
+</aside>
+
+<!-- Main content -->
+<div class="sidebar-content">
+  <!-- Header -->
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h1 class="text-xl font-bold" id="greeting">Salom!</h1>
+      <p class="text-gray-400 text-sm" id="car-info">—</p>
+    </div>
+    <!-- Online/Offline toggle -->
+    <div class="flex items-center gap-3">
+      <span class="text-sm text-gray-400">Holat:</span>
+      <button id="status-btn" onclick="toggleOnline()" class="btn btn-outline text-sm px-5">
+        —
+      </button>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+    <div class="stat-card">
+      <div class="label">Balans</div>
+      <div class="value" id="stat-balance">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Aktiv buyurtmalar</div>
+      <div class="value" id="stat-active">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Avtomobil turi</div>
+      <div class="value text-base mt-1" id="stat-cartype">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Holat</div>
+      <div class="value text-base mt-1" id="stat-status">—</div>
+    </div>
+  </div>
+
+  <!-- Active order panel -->
+  <div id="active-order-panel" class="card mb-6 hidden">
+    <h2 class="font-semibold mb-4 text-primary">🟢 Joriy buyurtma</h2>
+    <div id="active-order-info" class="grid grid-cols-2 gap-3 text-sm mb-4"></div>
+    <div class="flex gap-3 flex-wrap" id="active-order-actions"></div>
+  </div>
+
+  <!-- Recent orders table -->
+  <div class="card">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="font-semibold">So'nggi buyurtmalar</h2>
+      <a href="/driver/orders/" class="text-primary text-sm hover:underline">Barchasi →</a>
+    </div>
+    <div id="orders-loading" class="flex justify-center py-8">
+      <div class="spinner"></div>
+    </div>
+    <div id="orders-table-wrap" class="hidden overflow-x-auto">
+      <table class="tbl">
+        <thead>
+          <tr>
+            <th>#</th><th>Manzil</th><th>Narx</th><th>Status</th><th>Sana</th>
+          </tr>
+        </thead>
+        <tbody id="orders-tbody"></tbody>
+      </table>
+    </div>
+    <p id="orders-empty" class="text-gray-500 text-center py-6 hidden">Buyurtmalar yo'q</p>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let driverData = null;
+
+document.addEventListener('DOMContentLoaded', async () => {
+  if (!requireAuth(['driver'])) return;
+  await loadDriverDashboard();
+});
+
+async function loadDriverDashboard() {
+  try {
+    driverData = await DriversAPI.me();
+    renderProfile(driverData);
+    await loadOrders();
+  } catch (e) {
+    showToast(e.message, 'error');
+  }
+}
+
+function renderProfile(d) {
+  document.getElementById('greeting').textContent = `Salom, ${d.user?.first_name || 'Haydovchi'}!`;
+  document.getElementById('car-info').textContent = `${d.car_model} • ${d.car_number}`;
+  document.getElementById('stat-balance').textContent = formatMoney(d.wallet_balance);
+  document.getElementById('stat-active').textContent = d.active_orders_count ?? '0';
+  document.getElementById('stat-cartype').textContent = carTypeLabel(d.car_type);
+  document.getElementById('stat-status').textContent = d.is_online ? '🟢 Online' : '⚫ Offline';
+
+  const btn = document.getElementById('status-btn');
+  btn.textContent = d.is_online ? '🔴 Offline bo\'lish' : '🟢 Online bo\'lish';
+  btn.className = `btn text-sm px-5 ${d.is_online ? 'btn-danger' : 'btn-success'}`;
+}
+
+async function toggleOnline() {
+  const btn = document.getElementById('status-btn');
+  btn.disabled = true;
+  try {
+    const newStatus = !driverData.is_online;
+    await DriversAPI.setStatus(newStatus);
+    driverData.is_online = newStatus;
+    renderProfile(driverData);
+    showToast(newStatus ? 'Online bo\'ldingiz!' : 'Offline bo\'ldingiz', 'info');
+  } catch (e) {
+    showToast(e.message, 'error');
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function loadOrders() {
+  const loading = document.getElementById('orders-loading');
+  const wrap    = document.getElementById('orders-table-wrap');
+  const empty   = document.getElementById('orders-empty');
+  const tbody   = document.getElementById('orders-tbody');
+
+  try {
+    const res = await OrdersAPI.list({ page: 1 });
+    const orders = res.results || res;
+    loading.classList.add('hidden');
+
+    if (!orders.length) { empty.classList.remove('hidden'); return; }
+    wrap.classList.remove('hidden');
+
+    tbody.innerHTML = orders.map(o => `
+      <tr>
+        <td class="font-mono text-primary">#${o.id}</td>
+        <td class="max-w-xs truncate">${o.to_address || '—'}</td>
+        <td>${formatMoney(o.total_fare)}</td>
+        <td><span class="badge badge-${o.status}">${statusLabel(o.status)}</span></td>
+        <td class="text-gray-400">${formatDate(o.created_at)}</td>
+      </tr>
+    `).join('');
+
+    // Aktiv buyurtmani ajratib ko'rsatish
+    const active = orders.find(o => ['accepted','arrived','started'].includes(o.status));
+    if (active) renderActiveOrder(active);
+
+  } catch (e) {
+    loading.classList.add('hidden');
+    showToast(e.message, 'error');
+  }
+}
+
+function renderActiveOrder(o) {
+  const panel   = document.getElementById('active-order-panel');
+  const info    = document.getElementById('active-order-info');
+  const actions = document.getElementById('active-order-actions');
+  panel.classList.remove('hidden');
+
+  info.innerHTML = `
+    <div><span class="text-gray-400">Buyurtma #</span><br/><b>#${o.id}</b></div>
+    <div><span class="text-gray-400">Narx</span><br/><b>${formatMoney(o.total_fare)}</b></div>
+    <div><span class="text-gray-400">Manzildan</span><br/>${o.from_address || '—'}</div>
+    <div><span class="text-gray-400">Manzilga</span><br/>${o.to_address || '—'}</div>
+  `;
+
+  const nextMap = { accepted: 'arrived', arrived: 'started', started: 'done' };
+  const nextLabels = { arrived: 'Keldim', started: 'Boshlash', done: 'Yakunlash' };
+  const nextStatus = nextMap[o.status];
+
+  actions.innerHTML = nextStatus ? `
+    <button onclick="changeOrderStatus(${o.id}, '${nextStatus}')" class="btn btn-primary">
+      ${nextLabels[nextStatus]}
+    </button>
+    <button onclick="changeOrderStatus(${o.id}, 'cancelled')" class="btn btn-danger">
+      Bekor qilish
+    </button>
+  ` : '';
+}
+
+async function changeOrderStatus(orderId, status) {
+  try {
+    await OrdersAPI.setStatus(orderId, status);
+    showToast('Status yangilandi', 'success');
+    await loadDriverDashboard();
+  } catch (e) {
+    showToast(e.message, 'error');
+  }
+}
+
+// ─── Helpers ─────────────────────────────────────────────────────
+function formatMoney(v) { return v != null ? Number(v).toLocaleString('uz') + ' so\'m' : '—'; }
+function formatDate(d)  { return d ? new Date(d).toLocaleDateString('uz') : '—'; }
+function carTypeLabel(t) { return { start:'Start', comfort:'Comfort', cargo:'Cargo' }[t] || t; }
+function statusLabel(s) {
+  return { new:'Yangi', accepted:'Qabul', arrived:'Keldi', started:'Yo\'lda', done:'Tugadi', cancelled:'Bekor' }[s] || s;
+}
+</script>
+{% endblock %}

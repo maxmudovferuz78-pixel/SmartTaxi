@@ -85,7 +85,7 @@ ASGI_APPLICATION  = "config.asgi.application"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [BASE_DIR / "templates"],
+        "DIRS": [BASE_DIR / 'smarttaxi' / 'templates'],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -147,7 +147,8 @@ USE_TZ        = True
 # Statik va media fayllar
 # ------------------------------------------------------------------
 
-STATIC_URL  = "/static/"
+STATICFILES_DIRS = [BASE_DIR / 'smarttaxi' / 'static']
+# STATIC_URL  = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 MEDIA_URL   = "/media/"
 MEDIA_ROOT  = BASE_DIR / "media"

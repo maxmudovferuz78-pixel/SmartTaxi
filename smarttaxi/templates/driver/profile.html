@@ -1,0 +1,115 @@
+{% extends "shared/base.html" %}
+{% block title %}Profil — SmartTaxi{% endblock %}
+{% block navbar %}{% endblock %}
+{% block main_class %}{% endblock %}
+
+{% block content %}
+<aside class="sidebar">
+  <div class="text-primary font-bold text-lg mb-6 px-2">🚕 SmartTaxi</div>
+  <a href="/driver/" class="sidebar-link">🏠 Asosiy</a>
+  <a href="/driver/orders/" class="sidebar-link">📋 Buyurtmalar</a>
+  <a href="/driver/wallet/" class="sidebar-link">💳 Hamyon</a>
+  <a href="/driver/profile/" class="sidebar-link active">👤 Profil</a>
+  <div class="mt-auto pt-4 border-t border-dark-border">
+    <button onclick="logout()" class="sidebar-link w-full text-left text-danger hover:bg-red-900/20">🚪 Chiqish</button>
+  </div>
+</aside>
+
+<div class="sidebar-content max-w-2xl">
+  <h1 class="text-xl font-bold mb-6">👤 Mening profilim</h1>
+
+  <!-- User info -->
+  <div class="card mb-5">
+    <h2 class="font-semibold mb-4 text-gray-300">Shaxsiy ma'lumotlar</h2>
+    <div class="grid grid-cols-2 gap-4">
+      <div>
+        <label class="text-xs text-gray-400 font-medium">Ism</label>
+        <input id="first-name" type="text" class="input mt-1" placeholder="Ism" />
+      </div>
+      <div>
+        <label class="text-xs text-gray-400 font-medium">Familiya</label>
+        <input id="last-name" type="text" class="input mt-1" placeholder="Familiya" />
+      </div>
+      <div>
+        <label class="text-xs text-gray-400 font-medium">Telefon</label>
+        <input id="phone" type="text" class="input mt-1" disabled />
+      </div>
+      <div>
+        <label class="text-xs text-gray-400 font-medium">Telegram ID</label>
+        <input id="telegram-id" type="number" class="input mt-1" placeholder="Ixtiyoriy" />
+      </div>
+    </div>
+    <button onclick="saveProfile()" class="btn btn-primary mt-4" id="save-profile-btn">Saqlash</button>
+  </div>
+
+  <!-- Car info -->
+  <div class="card">
+    <h2 class="font-semibold mb-4 text-gray-300">Avtomobil ma'lumotlari</h2>
+    <div class="grid grid-cols-2 gap-4">
+      <div>
+        <label class="text-xs text-gray-400 font-medium">Avtomobil modeli</label>
+        <input id="car-model" type="text" class="input mt-1" placeholder="Chevrolet Malibu 2022" />
+      </div>
+      <div>
+        <label class="text-xs text-gray-400 font-medium">Davlat raqami</label>
+        <input id="car-number" type="text" class="input mt-1" placeholder="01A123BC" />
+      </div>
+      <div>
+        <label class="text-xs text-gray-400 font-medium">Avtomobil turi</label>
+        <input id="car-type" type="text" class="input mt-1" disabled />
+      </div>
+    </div>
+    <button onclick="saveCar()" class="btn btn-primary mt-4" id="save-car-btn">Avtomobilni yangilash</button>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+  if (!requireAuth(['driver'])) return;
+  await loadProfile();
+});
+
+async function loadProfile() {
+  try {
+    const d = await DriversAPI.me();
+    const u = d.user || {};
+    document.getElementById('first-name').value  = u.first_name || '';
+    document.getElementById('last-name').value   = u.last_name  || '';
+    document.getElementById('phone').value       = u.phone      || '';
+    document.getElementById('telegram-id').value = u.telegram_id || '';
+    document.getElementById('car-model').value   = d.car_model  || '';
+    document.getElementById('car-number').value  = d.car_number || '';
+    document.getElementById('car-type').value    = {start:'Start',comfort:'Comfort',cargo:'Cargo'}[d.car_type] || d.car_type;
+  } catch (e) { showToast(e.message, 'error'); }
+}
+
+async function saveProfile() {
+  const btn = document.getElementById('save-profile-btn');
+  btn.disabled = true; btn.textContent = 'Saqlanmoqda...';
+  try {
+    await AuthAPI.updateProfile({
+      first_name:  document.getElementById('first-name').value.trim(),
+      last_name:   document.getElementById('last-name').value.trim(),
+      telegram_id: document.getElementById('telegram-id').value || null,
+    });
+    showToast('Profil yangilandi!', 'success');
+  } catch (e) { showToast(e.message, 'error'); }
+  finally { btn.disabled = false; btn.textContent = 'Saqlash'; }
+}
+
+async function saveCar() {
+  const btn = document.getElementById('save-car-btn');
+  btn.disabled = true; btn.textContent = 'Saqlanmoqda...';
+  try {
+    await DriversAPI.updateProfile({
+      car_model:  document.getElementById('car-model').value.trim(),
+      car_number: document.getElementById('car-number').value.trim(),
+    });
+    showToast('Avtomobil ma\'lumotlari yangilandi!', 'success');
+  } catch (e) { showToast(e.message, 'error'); }
+  finally { btn.disabled = false; btn.textContent = 'Avtomobilni yangilash'; }
+}
+</script>
+{% endblock %}
