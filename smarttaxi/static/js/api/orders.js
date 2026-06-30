@@ -2,7 +2,7 @@
 const OrdersAPI = {
   list(p={})           { return api.get('/api/orders/', p); },
   get(id)              { return api.get(`/api/orders/${id}/`); },
-  create(p)            { return api.post('/api/orders/', p); },
+  create(p)            { return api.post('/api/orders/', p); }, // p: {from_address, from_lat, from_lng, to_address, to_lat, to_lng, car_type, payment_type, rush_fee, note}
   update(id,p)         { return api.patch(`/api/orders/${id}/`, p); },
   delete(id)           { return api.delete(`/api/orders/${id}/`); },
   assignDriver(oid,did){ return api.patch(`/api/orders/${oid}/assign_driver/`, {driver_id:did}); },

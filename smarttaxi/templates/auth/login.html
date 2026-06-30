@@ -202,8 +202,8 @@ async function verifyOtp() {
     showToast('Muvaffaqiyatli kirdingiz! 🎉', 'success');
     setTimeout(() => {
       const r = user.role || 'client';
-      const map = { admin:'/admin-panel/', operator:'/admin-panel/', driver:'/driver/', client:'/passenger/' };
-      window.location.href = map[r] || '/';
+      const map = { admin:'/admin-panel/', operator:'/admin-panel/', driver:'/driver/' };
+      window.location.href = map[r] || '/admin-panel/';
     }, 800);
   } catch(e) {
     err.textContent = e.message || "Noto'g'ri kod";

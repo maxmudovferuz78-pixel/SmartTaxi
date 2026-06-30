@@ -1,6 +1,7 @@
 {% extends "shared/base.html" %}
 {% block title %}Buyurtmalar — SmartTaxi Admin{% endblock %}
 {% block sidebar_nav %}
+<a href="/admin-panel/orders/new/" class="nav-link"><span class="nav-icon">➕</span> Yangi buyurtma</a>
 <a href="/admin-panel/" class="nav-link"><span class="nav-icon">📊</span> Dashboard</a>
 <a href="/admin-panel/drivers/" class="nav-link"><span class="nav-icon">🚗</span> Haydovchilar</a>
 <a href="/admin-panel/orders/" class="nav-link active"><span class="nav-icon">📋</span> Buyurtmalar</a>
@@ -11,11 +12,14 @@
 <div class="sidebar-content">
   <div class="page-header">
     <h1><div class="page-title-icon">📋</div>Buyurtmalar</h1>
-    <select id="f-status" onchange="load()" class="input" style="width:auto;">
+    <div style="display:flex;gap:10px;">
+      <a href="/admin-panel/orders/new/" class="btn btn-primary">➕ Yangi buyurtma</a>
+      <select id="f-status" onchange="load()" class="input" style="width:auto;">
       <option value="">Barcha holat</option><option value="new">Yangi</option><option value="accepted">Qabul</option>
       <option value="arrived">Keldi</option><option value="started">Yo'lda</option>
       <option value="done">Tugadi</option><option value="cancelled">Bekor</option>
     </select>
+    </div>
   </div>
   <div id="loading" style="display:flex;justify-content:center;padding:4rem;"><div class="spinner"></div></div>
   <div class="card tbl-wrap" id="tbl-wrap" style="display:none;padding:0;">

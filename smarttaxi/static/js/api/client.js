@@ -97,7 +97,7 @@ function applySidebarUser(u) {
   const initials = ((u.first_name||'')[0]||'') + ((u.last_name||'')[0]||'') || '?';
   av.textContent = initials.toUpperCase();
   nm.textContent = `${u.first_name||''} ${u.last_name||''}`.trim() || u.phone || '—';
-  const roleMap = { admin:'Administrator', operator:'Operator', driver:'Haydovchi', client:"Yo'lovchi" };
+  const roleMap = { admin:'Administrator', operator:'Operator', driver:'Haydovchi' };
   rl.textContent = roleMap[u.role] || u.role || '—';
 }
 

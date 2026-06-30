@@ -1,0 +1,223 @@
+{% extends "shared/base.html" %}
+{% block title %}Yangi buyurtma — SmartTaxi Admin{% endblock %}
+{% block sidebar_nav %}
+<a href="/admin-panel/" class="nav-link"><span class="nav-icon">📊</span> Dashboard</a>
+<a href="/admin-panel/orders/new/" class="nav-link active"><span class="nav-icon">➕</span> Yangi buyurtma</a>
+<a href="/admin-panel/drivers/" class="nav-link"><span class="nav-icon">🚗</span> Haydovchilar</a>
+<a href="/admin-panel/orders/" class="nav-link"><span class="nav-icon">📋</span> Buyurtmalar</a>
+<a href="/admin-panel/tariffs/" class="nav-link"><span class="nav-icon">💰</span> Tariflar</a>
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+  .leaflet-container { background: var(--bg3); border-radius: 10px; font-family: 'Inter', sans-serif; }
+  .map-box { height: 260px; border-radius: 10px; overflow: hidden; border: 1px solid var(--border); position: relative; }
+  .map-pick-hint {
+    position: absolute; top: 10px; left: 10px; z-index: 1000;
+    background: rgba(8,8,16,0.85); backdrop-filter: blur(6px);
+    color: var(--gold); font-size: 0.72rem; font-weight: 600;
+    padding: 5px 10px; border-radius: 99px; border: 1px solid var(--border2);
+    pointer-events: none;
+  }
+  .coord-pill {
+    display: inline-flex; gap: 6px; font-size: 0.72rem; color: var(--text2);
+    background: var(--bg3); border: 1px solid var(--border); border-radius: 6px;
+    padding: 4px 10px; margin-top: 6px; font-family: monospace;
+  }
+</style>
+{% endblock %}
+
+{% block body %}
+{% include "shared/sidebar.html" %}
+<div class="sidebar-content" style="max-width:950px;">
+
+  <div class="page-header">
+    <h1><div class="page-title-icon">➕</div>Yangi buyurtma (Call-Center)</h1>
+  </div>
+
+  <div class="card mb-6" style="background:var(--bg3);border-style:dashed;">
+    <p style="font-size:0.85rem;color:var(--text2);display:flex;align-items:center;gap:8px;">
+      📞 Mijoz qo'ng'iroq qildi — manzillarni xaritadan belgilang va buyurtmani oching.
+    </p>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;" class="two-col">
+
+    <!-- FROM map -->
+    <div class="card">
+      <h2 style="margin-bottom:0.75rem;display:flex;align-items:center;gap:6px;">📍 Qayerdan</h2>
+      <div class="form-group mb-3">
+        <input id="from-address" class="input" placeholder="Manzil nomi (masalan: Chilonzor 5-kvartal)" />
+      </div>
+      <div class="map-box">
+        <div class="map-pick-hint">Xaritada bosing 👆</div>
+        <div id="map-from" style="height:100%;width:100%;"></div>
+      </div>
+      <div class="coord-pill" id="from-coord">lat: — , lng: —</div>
+    </div>
+
+    <!-- TO map -->
+    <div class="card">
+      <h2 style="margin-bottom:0.75rem;display:flex;align-items:center;gap:6px;">🏁 Qayerga</h2>
+      <div class="form-group mb-3">
+        <input id="to-address" class="input" placeholder="Manzil nomi (masalan: Yunusobod 7-kvartal)" />
+      </div>
+      <div class="map-box">
+        <div class="map-pick-hint">Xaritada bosing 👆</div>
+        <div id="map-to" style="height:100%;width:100%;"></div>
+      </div>
+      <div class="coord-pill" id="to-coord">lat: — , lng: —</div>
+    </div>
+  </div>
+
+  <!-- Order details -->
+  <div class="card mt-6">
+    <h2 style="margin-bottom:1.25rem;">🚕 Buyurtma tafsilotlari</h2>
+
+    <label class="form-label mb-2" style="display:block;">Avtomobil turi</label>
+    <div class="car-type-grid mb-4" id="car-grid">
+      <div class="car-type-card selected" onclick="selCarType('start',this)">
+        <span class="car-emoji">🚗</span><div class="car-name">Start</div>
+      </div>
+      <div class="car-type-card" onclick="selCarType('comfort',this)">
+        <span class="car-emoji">🚙</span><div class="car-name">Comfort</div>
+      </div>
+      <div class="car-type-card" onclick="selCarType('cargo',this)">
+        <span class="car-emoji">🚚</span><div class="car-name">Cargo</div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.25rem;">
+      <div class="form-group">
+        <label class="form-label">To'lov turi</label>
+        <select id="pay-type" class="input">
+          <option value="cash">💵 Naqd</option>
+          <option value="qr">📱 QR (Click/Payme)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Shoshilinch ustama (so'm)</label>
+        <input id="rush-fee" type="number" class="input" placeholder="0" value="0" min="0" />
+      </div>
+    </div>
+
+    <div class="form-group mb-4">
+      <label class="form-label">Izoh (ixtiyoriy)</label>
+      <input id="note" class="input" placeholder="Operator izohi..." />
+    </div>
+
+    <button onclick="submitOrder()" class="btn btn-primary btn-lg btn-block" id="submit-btn">
+      🚕 Buyurtmani ochish
+    </button>
+    <p id="form-err" class="hidden" style="color:var(--red);font-size:0.82rem;margin-top:0.75rem;text-align:center;"></p>
+  </div>
+
+</div>
+<style>@media(max-width:900px){.two-col{grid-template-columns:1fr !important;}}</style>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+let selCar='start', fromCoord=null, toCoord=null, mapFrom, mapTo, markerFrom, markerTo;
+
+document.addEventListener('DOMContentLoaded', () => {
+  if (!requireAuth(['admin','operator'])) return;
+  initSidebarUser();
+  initMaps();
+});
+
+function initMaps() {
+  // Default center: Toshkent
+  const center = [41.2995, 69.2401];
+
+  mapFrom = L.map('map-from', { zoomControl: true, attributionControl: false }).setView(center, 12);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapFrom);
+  mapFrom.on('click', e => setPoint('from', e.latlng));
+
+  mapTo = L.map('map-to', { zoomControl: true, attributionControl: false }).setView(center, 12);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapTo);
+  mapTo.on('click', e => setPoint('to', e.latlng));
+
+  // Geolocation ixtiyoriy
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(pos => {
+      const c = [pos.coords.latitude, pos.coords.longitude];
+      mapFrom.setView(c, 14);
+      mapTo.setView(c, 14);
+    }, () => {}, { timeout: 3000 });
+  }
+}
+
+const goldIcon = L.divIcon({
+  html: '<div style="width:28px;height:28px;background:#F5A623;border-radius:50% 50% 50% 0;transform:rotate(-45deg);display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,0.4);"><span style="transform:rotate(45deg);font-size:14px;">📍</span></div>',
+  className: '', iconSize: [28,28], iconAnchor: [14,28],
+});
+
+function setPoint(which, latlng) {
+  const lat = latlng.lat.toFixed(6), lng = latlng.lng.toFixed(6);
+  if (which === 'from') {
+    fromCoord = { lat, lng };
+    if (markerFrom) mapFrom.removeLayer(markerFrom);
+    markerFrom = L.marker(latlng, { icon: goldIcon }).addTo(mapFrom);
+    document.getElementById('from-coord').textContent = `lat: ${lat} , lng: ${lng}`;
+  } else {
+    toCoord = { lat, lng };
+    if (markerTo) mapTo.removeLayer(markerTo);
+    markerTo = L.marker(latlng, { icon: goldIcon }).addTo(mapTo);
+    document.getElementById('to-coord').textContent = `lat: ${lat} , lng: ${lng}`;
+  }
+}
+
+function selCarType(type, el) {
+  selCar = type;
+  document.querySelectorAll('#car-grid .car-type-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+async function submitOrder() {
+  const err = document.getElementById('form-err');
+  err.classList.add('hidden');
+
+  const fromAddr = document.getElementById('from-address').value.trim();
+  const toAddr   = document.getElementById('to-address').value.trim();
+
+  if (!fromAddr) { showErr("Qayerdan manzilini kiriting"); return; }
+  if (!fromCoord) { showErr("Xaritadan 'Qayerdan' nuqtasini belgilang"); return; }
+
+  const payload = {
+    from_address: fromAddr,
+    from_lat: fromCoord.lat,
+    from_lng: fromCoord.lng,
+    car_type: selCar,
+    payment_type: document.getElementById('pay-type').value,
+    rush_fee: Number(document.getElementById('rush-fee').value) || 0,
+  };
+  if (toAddr)   payload.to_address = toAddr;
+  if (toCoord)  { payload.to_lat = toCoord.lat; payload.to_lng = toCoord.lng; }
+  const note = document.getElementById('note').value.trim();
+  if (note) payload.note = note;
+
+  const btn = document.getElementById('submit-btn');
+  btn.disabled = true; btn.textContent = 'Yaratilmoqda...';
+
+  try {
+    const order = await OrdersAPI.create(payload);
+    showToast(`Buyurtma #${order.id} ochildi! 🎉`, 'success');
+    setTimeout(() => { window.location.href = '/admin-panel/orders/'; }, 1000);
+  } catch (e) {
+    showErr(e.message || 'Xato yuz berdi');
+  } finally {
+    btn.disabled = false; btn.textContent = '🚕 Buyurtmani ochish';
+  }
+}
+
+function showErr(msg) {
+  const err = document.getElementById('form-err');
+  err.textContent = msg;
+  err.classList.remove('hidden');
+  showToast(msg, 'error');
+}
+</script>
+{% endblock %}
