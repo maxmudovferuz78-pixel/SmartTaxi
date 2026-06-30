@@ -1,253 +1,276 @@
 {% extends "shared/base.html" %}
-{% block title %}Yo'lovchi panel — SmartTaxi{% endblock %}
-{% block navbar %}{% endblock %}
-{% block main_class %}{% endblock %}
-
-{% block content %}
-<aside class="sidebar">
-  <div class="text-primary font-bold text-lg mb-6 px-2">🚕 SmartTaxi</div>
-  <a href="/passenger/" class="sidebar-link active">🏠 Asosiy</a>
-  <a href="/passenger/orders/" class="sidebar-link">📋 Buyurtmalarim</a>
-  <a href="/passenger/profile/" class="sidebar-link">👤 Profil</a>
-  <div class="mt-auto pt-4 border-t border-dark-border">
-    <button onclick="logout()" class="sidebar-link w-full text-left text-danger hover:bg-red-900/20">🚪 Chiqish</button>
-  </div>
-</aside>
-
+{% block title %}Buyurtma berish — SmartTaxi{% endblock %}
+{% block sidebar_nav %}
+<a href="/passenger/" class="nav-link active"><span class="nav-icon">🏠</span> Bosh sahifa</a>
+<a href="/passenger/orders/" class="nav-link"><span class="nav-icon">📋</span> Buyurtmalarim</a>
+<a href="/passenger/profile/" class="nav-link"><span class="nav-icon">👤</span> Profil</a>
+{% endblock %}
+{% block body %}
+{% include "shared/sidebar.html" %}
 <div class="sidebar-content">
-  <div class="flex items-center justify-between mb-6">
-    <div>
-      <h1 class="text-xl font-bold" id="greeting">Salom!</h1>
-      <p class="text-gray-400 text-sm">Qayerga borasiz bugun?</p>
-    </div>
+
+  <div class="page-header">
+    <h1><div class="page-title-icon">🚕</div><span id="greeting">Salom!</span></h1>
   </div>
 
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-    <!-- Order form -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;" class="two-col">
+
+    <!-- ORDER FORM -->
     <div class="card">
-      <h2 class="font-semibold mb-5">🚕 Yangi buyurtma</h2>
+      <h2 style="margin-bottom:1.5rem;display:flex;align-items:center;gap:8px;">
+        <span style="color:var(--gold);">🚕</span> Taxi chaqirish
+      </h2>
 
-      <label class="text-xs text-gray-400 font-medium">Qayerdan</label>
-      <input id="from-address" type="text" class="input mt-1 mb-3" placeholder="Manzilni kiriting..." />
-
-      <label class="text-xs text-gray-400 font-medium">Qayerga</label>
-      <input id="to-address" type="text" class="input mt-1 mb-3" placeholder="Borish manzili..." />
-
-      <label class="text-xs text-gray-400 font-medium">Avtomobil turi</label>
-      <div class="grid grid-cols-3 gap-2 mt-1 mb-4" id="car-type-btns">
-        <button onclick="selectCarType('start')"   class="car-type-btn btn btn-outline text-sm" data-type="start">🚗 Start</button>
-        <button onclick="selectCarType('comfort')" class="car-type-btn btn btn-outline text-sm" data-type="comfort">🚙 Comfort</button>
-        <button onclick="selectCarType('cargo')"   class="car-type-btn btn btn-outline text-sm" data-type="cargo">🚚 Cargo</button>
+      <!-- From / To -->
+      <div class="form-group mb-3">
+        <label class="form-label">📍 Qayerdan</label>
+        <input id="from" class="input" placeholder="Manzil kiriting..." />
+      </div>
+      <div class="form-group mb-4">
+        <label class="form-label">🏁 Qayerga</label>
+        <input id="to" class="input" placeholder="Borish manzili..." />
       </div>
 
-      <label class="text-xs text-gray-400 font-medium">To'lov turi</label>
-      <div class="flex gap-3 mt-1 mb-5">
-        <label class="flex items-center gap-2 cursor-pointer">
-          <input type="radio" name="payment" value="cash" checked class="accent-primary" />
-          <span class="text-sm">💵 Naqd</span>
-        </label>
-        <label class="flex items-center gap-2 cursor-pointer">
-          <input type="radio" name="payment" value="qr" class="accent-primary" />
-          <span class="text-sm">📱 QR</span>
-        </label>
-      </div>
-
-      <!-- Tariff preview -->
-      <div id="tariff-info" class="hidden card !p-3 !bg-dark mb-4 text-sm">
-        <div class="flex justify-between text-gray-400">
-          <span>Boshlang'ich narx:</span><span id="t-base">—</span>
+      <!-- Car type -->
+      <label class="form-label mb-2" style="display:block;">Avtomobil turi</label>
+      <div class="car-type-grid mb-4" id="car-type-grid">
+        <div class="car-type-card selected" onclick="selectCar('start',this)">
+          <span class="car-emoji">🚗</span>
+          <div class="car-name">Start</div>
+          <div class="car-price" id="p-start">—</div>
         </div>
-        <div class="flex justify-between text-gray-400">
-          <span>1 km:</span><span id="t-km">—</span>
+        <div class="car-type-card" onclick="selectCar('comfort',this)">
+          <span class="car-emoji">🚙</span>
+          <div class="car-name">Comfort</div>
+          <div class="car-price" id="p-comfort">—</div>
+        </div>
+        <div class="car-type-card" onclick="selectCar('cargo',this)">
+          <span class="car-emoji">🚚</span>
+          <div class="car-name">Cargo</div>
+          <div class="car-price" id="p-cargo">—</div>
         </div>
       </div>
 
-      <button onclick="createOrder()" class="btn btn-primary w-full text-base" id="order-btn">
-        🚕 Taksi chaqirish
+      <!-- Payment -->
+      <div style="display:flex;gap:1.5rem;margin-bottom:1.5rem;">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:0.875rem;">
+          <input type="radio" name="pay" value="cash" checked style="accent-color:var(--gold);width:16px;height:16px;" />
+          💵 Naqd
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:0.875rem;">
+          <input type="radio" name="pay" value="qr" style="accent-color:var(--gold);width:16px;height:16px;" />
+          📱 QR (Click/Payme)
+        </label>
+      </div>
+
+      <button id="order-btn" onclick="createOrder()" class="btn btn-primary btn-block btn-lg">
+        🚕 Taxi chaqirish
       </button>
     </div>
 
-    <!-- Active order tracker -->
-    <div id="active-panel" class="card hidden">
-      <h2 class="font-semibold mb-4 text-primary">🔵 Buyurtma holati</h2>
-      <div id="order-status-track" class="space-y-3 mb-4"></div>
-      <div id="driver-info" class="card !bg-dark !p-3 text-sm hidden">
-        <p class="text-gray-400 text-xs mb-1">Haydovchi</p>
-        <p id="driver-name" class="font-semibold">—</p>
-        <p id="driver-car"  class="text-gray-400 text-xs mt-1">—</p>
+    <!-- TRACKING PANEL -->
+    <div>
+      <!-- Active order tracker -->
+      <div class="card" id="tracker-card" style="display:none;border-color:rgba(48,209,88,0.3);margin-bottom:1.5rem;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;">
+          <h2 style="display:flex;align-items:center;gap:8px;">
+            <div class="pulse"></div> Buyurtma kuzatuvi
+          </h2>
+          <span class="badge badge-new" id="track-status">Yangi</span>
+        </div>
+
+        <!-- Status steps -->
+        <div class="status-track" id="status-steps">
+          <!-- JS renders here -->
+        </div>
+
+        <hr class="divider" />
+
+        <!-- Driver info -->
+        <div id="driver-info" style="display:none;">
+          <div style="display:flex;align-items:center;gap:12px;background:var(--bg3);border-radius:10px;padding:12px;">
+            <div class="driver-avatar-lg" id="driver-av">?</div>
+            <div>
+              <div style="font-weight:700;" id="driver-nm">—</div>
+              <div style="font-size:0.78rem;color:var(--text2);" id="driver-cr">—</div>
+            </div>
+          </div>
+        </div>
+
+        <button onclick="cancelActive()" class="btn btn-danger btn-block mt-4" id="cancel-btn">
+          Bekor qilish
+        </button>
       </div>
-      <button onclick="cancelActiveOrder()" id="cancel-btn" class="btn btn-danger w-full mt-4">
-        Bekor qilish
-      </button>
+
+      <!-- Recent orders -->
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;">
+          <h2>So'nggi safarlar</h2>
+          <a href="/passenger/orders/" style="color:var(--gold);font-size:0.8rem;text-decoration:none;font-weight:600;">
+            Barchasi →
+          </a>
+        </div>
+        <div id="recent-loading" style="display:flex;justify-content:center;padding:2rem;"><div class="spinner"></div></div>
+        <div id="recent-list"></div>
+        <div id="recent-empty" class="empty-state" style="display:none;">
+          <div class="empty-icon">🚕</div><p>Hali sayohat yo'q</p>
+        </div>
+      </div>
     </div>
 
-    <!-- Recent orders -->
-    <div class="card lg:col-span-2">
-      <div class="flex items-center justify-between mb-4">
-        <h2 class="font-semibold">So'nggi buyurtmalar</h2>
-        <a href="/passenger/orders/" class="text-primary text-sm hover:underline">Barchasi →</a>
-      </div>
-      <div id="recent-loading" class="flex justify-center py-6"><div class="spinner"></div></div>
-      <div id="recent-list" class="hidden space-y-2"></div>
-      <p id="recent-empty" class="text-gray-500 text-center py-6 hidden">Hali buyurtma yo'q</p>
-    </div>
   </div>
 </div>
-{% endblock %}
 
+<style>
+@media(max-width:900px){ .two-col{grid-template-columns:1fr !important;} }
+</style>
+{% endblock %}
 {% block extra_js %}
 <script>
-let selectedCarType = 'start';
-let tariffs = {};
-let activeOrderId = null;
-let pollTimer = null;
+let selCar='start', activeId=null, pollTimer=null;
+const tariffs={};
 
-document.addEventListener('DOMContentLoaded', async () => {
-  if (!requireAuth(['client'])) return;
-  const u = JSON.parse(localStorage.getItem('user_data') || '{}');
-  if (u.first_name) document.getElementById('greeting').textContent = `Salom, ${u.first_name}!`;
-  selectCarType('start');
-  await loadTariffs();
-  await loadRecentOrders();
+document.addEventListener('DOMContentLoaded',async()=>{
+  if(!requireAuth(['client']))return;
+  initSidebarUser();
+  const u=JSON.parse(localStorage.getItem('st_user')||'{}');
+  if(u.first_name) document.getElementById('greeting').textContent='Salom, '+u.first_name+'!';
+  await Promise.all([loadTariffs(),loadRecent()]);
 });
 
-function selectCarType(type) {
-  selectedCarType = type;
-  document.querySelectorAll('.car-type-btn').forEach(btn => {
-    btn.classList.toggle('btn-primary', btn.dataset.type === type);
-    btn.classList.toggle('btn-outline', btn.dataset.type !== type);
-  });
-  showTariff(type);
-}
-
-async function loadTariffs() {
-  try {
-    const res = await OrdersAPI.getTariffs();
-    const list = res.results || res;
-    list.forEach(t => { tariffs[t.category] = t; });
-    showTariff(selectedCarType);
-  } catch {}
-}
-
-function showTariff(type) {
-  const t = tariffs[type];
-  if (!t) return;
-  document.getElementById('tariff-info').classList.remove('hidden');
-  document.getElementById('t-base').textContent = Number(t.base_fare).toLocaleString('uz') + ' so\'m';
-  document.getElementById('t-km').textContent   = Number(t.per_km).toLocaleString('uz') + ' so\'m';
-}
-
-async function createOrder() {
-  const from = document.getElementById('from-address').value.trim();
-  const to   = document.getElementById('to-address').value.trim();
-  const payment = document.querySelector('input[name="payment"]:checked').value;
-
-  if (!from || !to) { showToast('Manzillarni kiriting', 'error'); return; }
-
-  const btn = document.getElementById('order-btn');
-  btn.disabled = true; btn.textContent = 'Buyurtma berilmoqda...';
-  try {
-    const order = await OrdersAPI.create({
-      from_address: from,
-      to_address: to,
-      car_type: selectedCarType,
-      payment_type: payment,
+async function loadTariffs(){
+  try{
+    const res=await OrdersAPI.getTariffs();
+    (res.results||res).forEach(t=>{
+      tariffs[t.category]=t;
+      const el=document.getElementById('p-'+t.category);
+      if(el) el.textContent=Number(t.base_fare).toLocaleString('uz-UZ')+" so'm dan";
     });
-    showToast('Buyurtma berildi!', 'success');
-    activeOrderId = order.id;
-    showActivePanel(order);
-    startPolling();
-    document.getElementById('from-address').value = '';
-    document.getElementById('to-address').value   = '';
-  } catch (e) {
-    showToast(e.message, 'error');
-  } finally {
-    btn.disabled = false; btn.textContent = '🚕 Taksi chaqirish';
-  }
+  }catch{}
 }
 
-function showActivePanel(order) {
-  document.getElementById('active-panel').classList.remove('hidden');
-  renderStatusTrack(order);
-  if (order.driver) {
-    document.getElementById('driver-info').classList.remove('hidden');
-    document.getElementById('driver-name').textContent = `${order.driver.first_name || ''} ${order.driver.last_name || ''}`.trim() || '—';
-    document.getElementById('driver-car').textContent  = `${order.driver.car_model || ''} • ${order.driver.car_number || ''}`;
-  }
-  if (['done','cancelled'].includes(order.status)) {
-    clearInterval(pollTimer);
-    document.getElementById('cancel-btn').classList.add('hidden');
-  }
+function selectCar(type,el){
+  selCar=type;
+  document.querySelectorAll('.car-type-card').forEach(c=>c.classList.remove('selected'));
+  el.classList.add('selected');
 }
 
-function renderStatusTrack(order) {
-  const steps = ['new','accepted','arrived','started','done'];
-  const labels = { new:'Yangi', accepted:'Qabul qilindi', arrived:'Haydovchi keldi', started:"Yo'lda", done:'Yetib keldingiz!' };
-  const idx = steps.indexOf(order.status);
-  document.getElementById('order-status-track').innerHTML = steps.map((s, i) => `
-    <div class="flex items-center gap-3">
-      <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold
-        ${i < idx ? 'bg-success' : i === idx ? 'bg-primary text-dark' : 'bg-dark-border text-gray-500'}">
-        ${i < idx ? '✓' : i + 1}
+async function createOrder(){
+  const from=document.getElementById('from').value.trim();
+  const to  =document.getElementById('to').value.trim();
+  const pay =document.querySelector('input[name="pay"]:checked').value;
+  if(!from||!to){showToast("Manzillarni kiriting",'warn');return;}
+  const btn=document.getElementById('order-btn');
+  btn.disabled=true;btn.textContent='Buyurtma berilmoqda...';
+  try{
+    const o=await OrdersAPI.create({from_address:from,to_address:to,car_type:selCar,payment_type:pay});
+    showToast('Buyurtma muvaffaqiyatli berildi! 🎉','success');
+    activeId=o.id;
+    document.getElementById('from').value='';
+    document.getElementById('to').value='';
+    showTracker(o);
+    startPoll();
+    await loadRecent();
+  }catch(e){showToast(e.message,'error');}
+  finally{btn.disabled=false;btn.textContent='🚕 Taxi chaqirish';}
+}
+
+function showTracker(o){
+  document.getElementById('tracker-card').style.display='block';
+  document.getElementById('track-status').className='badge badge-'+o.status;
+  document.getElementById('track-status').textContent=statusLabel(o.status);
+
+  const steps=[
+    {key:'new',     label:'Buyurtma berildi',    sub:'Operator ko\'rib chiqmoqda'},
+    {key:'accepted',label:'Haydovchi qabul qildi',sub:'Haydovchi yo\'lda'},
+    {key:'arrived', label:'Haydovchi keldi',       sub:'Siz oldingizda kutmoqda'},
+    {key:'started', label:"Yo'lda",                sub:'Manzilga ketmoqdamiz'},
+    {key:'done',    label:'Yetib keldingiz!',       sub:'Safar yakunlandi'},
+  ];
+  const curIdx=steps.findIndex(s=>s.key===o.status);
+
+  document.getElementById('status-steps').innerHTML=steps.map((s,i)=>`
+    <div class="status-step">
+      <div class="status-step-line">
+        <div class="status-dot ${i<curIdx?'done':i===curIdx?'current':'pending'}">
+          ${i<curIdx?'✓':i+1}
+        </div>
+        ${i<steps.length-1?`<div class="status-connector ${i<curIdx?'done':''}"></div>`:''}
       </div>
-      <span class="text-sm ${i === idx ? 'text-white font-semibold' : 'text-gray-400'}">${labels[s]}</span>
+      <div class="status-step-body">
+        <div class="status-step-label ${i===curIdx?'text-gold':i<curIdx?'text-green':'text-muted'}">${s.label}</div>
+        ${i===curIdx?`<div class="status-step-sub">${s.sub}</div>`:''}
+      </div>
     </div>
   `).join('');
-}
 
-function startPolling() {
-  clearInterval(pollTimer);
-  pollTimer = setInterval(async () => {
-    if (!activeOrderId) return;
-    try {
-      const o = await OrdersAPI.get(activeOrderId);
-      showActivePanel(o);
-      if (['done','cancelled'].includes(o.status)) {
-        clearInterval(pollTimer);
-        await loadRecentOrders();
-      }
-    } catch {}
-  }, 5000);
-}
+  if(o.driver){
+    document.getElementById('driver-info').style.display='block';
+    const initials=((o.driver.first_name||'')[0]||'?').toUpperCase();
+    document.getElementById('driver-av').textContent=initials;
+    document.getElementById('driver-nm').textContent=`${o.driver.first_name||''} ${o.driver.last_name||''}`.trim();
+    document.getElementById('driver-cr').textContent=`${o.driver.car_model||''} • ${o.driver.car_number||''}`;
+  }
 
-async function cancelActiveOrder() {
-  if (!activeOrderId) return;
-  try {
-    await OrdersAPI.setStatus(activeOrderId, 'cancelled');
-    showToast('Buyurtma bekor qilindi', 'info');
+  if(['done','cancelled'].includes(o.status)){
     clearInterval(pollTimer);
-    document.getElementById('active-panel').classList.add('hidden');
-    activeOrderId = null;
-    await loadRecentOrders();
-  } catch (e) { showToast(e.message, 'error'); }
+    document.getElementById('cancel-btn').style.display='none';
+    if(o.status==='done') setTimeout(()=>{
+      document.getElementById('tracker-card').style.display='none';
+      activeId=null;
+    },5000);
+  }
 }
 
-async function loadRecentOrders() {
-  const loading = document.getElementById('recent-loading');
-  const list    = document.getElementById('recent-list');
-  const empty   = document.getElementById('recent-empty');
-  try {
-    const res = await OrdersAPI.list({ page: 1 });
-    const orders = (res.results || res).slice(0, 5);
-    loading.classList.add('hidden');
-    if (!orders.length) { empty.classList.remove('hidden'); return; }
-    list.classList.remove('hidden');
-    list.innerHTML = orders.map(o => `
-      <div class="flex items-center justify-between py-3 border-b border-dark-border last:border-0">
+function startPoll(){
+  clearInterval(pollTimer);
+  pollTimer=setInterval(async()=>{
+    if(!activeId)return;
+    try{
+      const o=await OrdersAPI.get(activeId);
+      showTracker(o);
+      if(['done','cancelled'].includes(o.status)){clearInterval(pollTimer);await loadRecent();}
+    }catch{}
+  },5000);
+}
+
+async function cancelActive(){
+  if(!activeId)return;
+  if(!confirm('Buyurtmani bekor qilmoqchimisiz?'))return;
+  try{
+    await OrdersAPI.setStatus(activeId,'cancelled');
+    showToast('Buyurtma bekor qilindi','info');
+    clearInterval(pollTimer);
+    document.getElementById('tracker-card').style.display='none';
+    activeId=null;
+    await loadRecent();
+  }catch(e){showToast(e.message,'error');}
+}
+
+async function loadRecent(){
+  const loading=document.getElementById('recent-loading');
+  const list=document.getElementById('recent-list');
+  const empty=document.getElementById('recent-empty');
+  try{
+    const res=await OrdersAPI.list({page:1});
+    const orders=(res.results||res).slice(0,5);
+    loading.style.display='none';
+    if(!orders.length){empty.style.display='block';return;}
+    list.innerHTML=orders.map(o=>`
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:0.75rem 0;border-bottom:1px solid var(--border);">
         <div>
-          <span class="font-mono text-primary text-sm">#${o.id}</span>
-          <span class="badge badge-${o.status} ml-2 text-xs">${statusLabel(o.status)}</span>
-          <p class="text-xs text-gray-400 mt-0.5">${o.to_address || '—'}</p>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;">
+            <span style="color:var(--gold);font-weight:700;font-size:0.82rem;">#${o.id}</span>
+            <span class="badge badge-${o.status}">${statusLabel(o.status)}</span>
+          </div>
+          <div style="font-size:0.75rem;color:var(--text2);max-width:200px;" class="truncate">${o.to_address||'—'}</div>
         </div>
-        <span class="text-sm font-semibold">${formatMoney(o.total_fare)}</span>
-      </div>
-    `).join('');
-  } catch { loading.classList.add('hidden'); }
-}
-
-function formatMoney(v) { return v != null ? Number(v).toLocaleString('uz') + ' so\'m' : '—'; }
-function statusLabel(s) {
-  return {new:'Yangi',accepted:'Qabul',arrived:'Keldi',started:"Yo'lda",done:'Tugadi',cancelled:'Bekor'}[s]||s;
+        <div style="text-align:right;">
+          <div style="font-weight:700;font-size:0.875rem;">${fmoney(o.total_fare)}</div>
+          <div style="font-size:0.72rem;color:var(--text3);">${fdateshort(o.created_at)}</div>
+        </div>
+      </div>`).join('');
+  }catch{loading.style.display='none';}
 }
 </script>
 {% endblock %}

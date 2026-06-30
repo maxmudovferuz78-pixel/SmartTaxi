@@ -1,50 +1,21 @@
-/**
- * SmartTaxi — Orders API
- * /api/orders/ endpointlari
- */
-
+/* Orders API */
 const OrdersAPI = {
-  /** Buyurtmalar ro'yxati */
-  list(params = {}) {
-    return api.get('/api/orders/', params);
-  },
-
-  /** Bitta buyurtma */
-  get(id) {
-    return api.get(`/api/orders/${id}/`);
-  },
-
-  /** Yangi buyurtma yaratish */
-  create(payload) {
-    return api.post('/api/orders/', payload);
-  },
-
-  /** Buyurtmani yangilash */
-  update(id, payload) {
-    return api.patch(`/api/orders/${id}/`, payload);
-  },
-
-  /** Buyurtmani o'chirish */
-  delete(id) {
-    return api.delete(`/api/orders/${id}/`);
-  },
-
-  /** Haydovchi biriktirish (operator) */
-  assignDriver(orderId, driverId) {
-    return api.patch(`/api/orders/${orderId}/assign_driver/`, { driver_id: driverId });
-  },
-
-  /**
-   * Buyurtma statusini o'zgartirish
-   * status: accepted | arrived | started | done | cancelled
-   */
-  setStatus(orderId, status) {
-    return api.patch(`/api/orders/${orderId}/set_status/`, { status });
-  },
-
-  /** Tariflar ro'yxati */
-  getTariffs() {
-    return api.get('/api/tariffs/');
-  },
+  list(p={})           { return api.get('/api/orders/', p); },
+  get(id)              { return api.get(`/api/orders/${id}/`); },
+  create(p)            { return api.post('/api/orders/', p); },
+  update(id,p)         { return api.patch(`/api/orders/${id}/`, p); },
+  delete(id)           { return api.delete(`/api/orders/${id}/`); },
+  assignDriver(oid,did){ return api.patch(`/api/orders/${oid}/assign_driver/`, {driver_id:did}); },
+  setStatus(oid,s)     { return api.patch(`/api/orders/${oid}/set_status/`, {status:s}); },
+  getTariffs()         { return api.get('/api/tariffs/'); },
+  saveTariff(id,p)     { return id ? api.put(`/api/tariffs/${id}/`,p) : api.post('/api/tariffs/',p); },
 };
 window.OrdersAPI = OrdersAPI;
+
+/* Wallet API */
+const WalletAPI = {
+  getBalance()       { return api.get('/api/wallet/me/'); },
+  transactions(p={}) { return api.get('/api/wallet/transactions/', p); },
+  topUp(amount,type) { return api.post('/api/payments/topup/', {amount,payment_type:type}); },
+};
+window.WalletAPI = WalletAPI;

@@ -1,167 +1,134 @@
+<!-- DRIVER ORDERS: templates/driver/orders.html -->
 {% extends "shared/base.html" %}
 {% block title %}Buyurtmalar — SmartTaxi{% endblock %}
-{% block navbar %}{% endblock %}
-{% block main_class %}{% endblock %}
-
-{% block content %}
-<aside class="sidebar">
-  <div class="text-primary font-bold text-lg mb-6 px-2">🚕 SmartTaxi</div>
-  <a href="/driver/" class="sidebar-link">🏠 Asosiy</a>
-  <a href="/driver/orders/" class="sidebar-link active">📋 Buyurtmalar</a>
-  <a href="/driver/wallet/" class="sidebar-link">💳 Hamyon</a>
-  <a href="/driver/profile/" class="sidebar-link">👤 Profil</a>
-  <div class="mt-auto pt-4 border-t border-dark-border">
-    <button onclick="logout()" class="sidebar-link w-full text-left text-danger hover:bg-red-900/20">🚪 Chiqish</button>
-  </div>
-</aside>
-
+{% block sidebar_nav %}
+<a href="/driver/" class="nav-link"><span class="nav-icon">🏠</span> Bosh sahifa</a>
+<a href="/driver/orders/" class="nav-link active"><span class="nav-icon">📋</span> Buyurtmalar</a>
+<a href="/driver/wallet/" class="nav-link"><span class="nav-icon">💳</span> Hamyon</a>
+<a href="/driver/profile/" class="nav-link"><span class="nav-icon">👤</span> Profil</a>
+{% endblock %}
+{% block body %}
+{% include "shared/sidebar.html" %}
 <div class="sidebar-content">
-  <div class="flex items-center justify-between mb-6">
-    <h1 class="text-xl font-bold">📋 Buyurtmalar</h1>
-    <div class="flex gap-2">
-      <select id="filter-status" onchange="loadOrders()" class="input w-auto text-sm">
-        <option value="">Barcha holat</option>
-        <option value="new">Yangi</option>
-        <option value="accepted">Qabul</option>
-        <option value="arrived">Keldi</option>
-        <option value="started">Yo'lda</option>
-        <option value="done">Tugadi</option>
-        <option value="cancelled">Bekor</option>
-      </select>
-    </div>
+  <div class="page-header">
+    <h1><div class="page-title-icon">📋</div>Buyurtmalar</h1>
+    <select id="f-status" onchange="load()" class="input" style="width:auto;">
+      <option value="">Barchasi</option>
+      <option value="new">Yangi</option><option value="accepted">Qabul</option>
+      <option value="arrived">Keldi</option><option value="started">Yo'lda</option>
+      <option value="done">Tugadi</option><option value="cancelled">Bekor</option>
+    </select>
   </div>
-
-  <div id="loading" class="flex justify-center py-16"><div class="spinner"></div></div>
-
-  <div id="orders-list" class="hidden space-y-3"></div>
-  <p id="orders-empty" class="text-gray-500 text-center py-16 hidden">Buyurtmalar topilmadi</p>
-
-  <!-- Pagination -->
-  <div class="flex justify-center gap-3 mt-6" id="pagination"></div>
+  <div id="loading" style="display:flex;justify-content:center;padding:4rem;"><div class="spinner"></div></div>
+  <div id="list" style="display:none;display:grid;gap:12px;"></div>
+  <div id="empty" style="display:none;" class="empty-state"><div class="empty-icon">📋</div><h3>Buyurtma topilmadi</h3></div>
+  <div class="pagination" id="pagination"></div>
 </div>
 
-<!-- Order detail modal -->
-<div id="modal" class="fixed inset-0 bg-black/70 z-50 hidden flex items-center justify-center p-4">
-  <div class="card w-full max-w-lg relative">
-    <button onclick="closeModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white text-xl">✕</button>
-    <h2 class="font-bold text-lg mb-4" id="modal-title">Buyurtma #</h2>
-    <div id="modal-body" class="space-y-3 text-sm"></div>
-    <div class="flex gap-3 mt-5" id="modal-actions"></div>
+<!-- Modal -->
+<div class="modal-overlay" id="modal">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <h2 style="margin-bottom:1.25rem;" id="modal-title">Buyurtma</h2>
+    <div id="modal-body"></div>
+    <div style="display:flex;gap:10px;margin-top:1.25rem;" id="modal-actions"></div>
   </div>
 </div>
 {% endblock %}
-
 {% block extra_js %}
 <script>
-let currentPage = 1;
-
-document.addEventListener('DOMContentLoaded', () => {
-  if (!requireAuth(['driver'])) return;
-  loadOrders();
-});
-
-async function loadOrders(page = 1) {
-  currentPage = page;
-  const status  = document.getElementById('filter-status').value;
-  const loading = document.getElementById('loading');
-  const list    = document.getElementById('orders-list');
-  const empty   = document.getElementById('orders-empty');
-
-  loading.classList.remove('hidden');
-  list.classList.add('hidden');
-  empty.classList.add('hidden');
-
-  try {
-    const params = { page };
-    if (status) params.status = status;
-    const res = await OrdersAPI.list(params);
-    const orders = res.results || res;
-    loading.classList.add('hidden');
-
-    if (!orders.length) { empty.classList.remove('hidden'); return; }
-    list.classList.remove('hidden');
-
-    list.innerHTML = orders.map(o => `
-      <div class="card hover:border-primary/50 transition-colors cursor-pointer" onclick="openOrder(${o.id})">
-        <div class="flex items-start justify-between">
-          <div>
-            <span class="text-primary font-bold">#${o.id}</span>
-            <span class="badge badge-${o.status} ml-2">${statusLabel(o.status)}</span>
+let page=1;
+document.addEventListener('DOMContentLoaded',()=>{ if(!requireAuth(['driver']))return; initSidebarUser(); load(); });
+async function load(p=1){
+  page=p;
+  const st=document.getElementById('f-status').value;
+  document.getElementById('loading').style.display='flex';
+  document.getElementById('list').style.display='none';
+  document.getElementById('empty').style.display='none';
+  try{
+    const res=await OrdersAPI.list({page,..( st?{status:st}:{})});
+    const orders=res.results||res;
+    document.getElementById('loading').style.display='none';
+    if(!orders.length){document.getElementById('empty').style.display='block';return;}
+    const el=document.getElementById('list');
+    el.style.display='grid';
+    el.innerHTML=orders.map(o=>`
+      <div class="card card-hover" style="cursor:pointer;" onclick="openOrder(${o.id})">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="color:var(--gold);font-weight:800;font-family:'Syne',sans-serif;">#${o.id}</span>
+            <span class="badge badge-${o.status}">${statusLabel(o.status)}</span>
           </div>
-          <span class="text-gray-400 text-xs">${formatDate(o.created_at)}</span>
+          <span style="color:var(--text3);font-size:0.75rem;">${fdate(o.created_at)}</span>
         </div>
-        <div class="mt-3 grid grid-cols-2 gap-2 text-sm">
-          <div><span class="text-gray-400">Qayerdan:</span><br/>${o.from_address || '—'}</div>
-          <div><span class="text-gray-400">Qayerga:</span><br/>${o.to_address || '—'}</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+          <div style="background:var(--bg3);border-radius:8px;padding:10px;">
+            <div style="font-size:0.68rem;color:var(--text2);margin-bottom:3px;">QAYERDAN</div>
+            <div style="font-size:0.82rem;">${o.from_address||'—'}</div>
+          </div>
+          <div style="background:var(--bg3);border-radius:8px;padding:10px;">
+            <div style="font-size:0.68rem;color:var(--text2);margin-bottom:3px;">QAYERGA</div>
+            <div style="font-size:0.82rem;">${o.to_address||'—'}</div>
+          </div>
         </div>
-        <div class="mt-3 flex items-center justify-between">
-          <span class="text-primary font-semibold">${formatMoney(o.total_fare)}</span>
-          <span class="text-gray-400 text-xs">${o.payment_type === 'cash' ? '💵 Naqd' : '📱 QR'}</span>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding-top:10px;border-top:1px solid var(--border);">
+          <span style="font-weight:700;color:var(--gold);">${fmoney(o.total_fare)}</span>
+          <span style="color:var(--text2);font-size:0.78rem;">${o.payment_type==='cash'?'💵 Naqd':'📱 QR'}</span>
         </div>
-      </div>
-    `).join('');
-
-    renderPagination(res.count, res.next, res.previous);
-  } catch (e) {
-    loading.classList.add('hidden');
-    showToast(e.message, 'error');
-  }
+      </div>`).join('');
+    renderPag(res.count,res.next,res.previous);
+  }catch(e){document.getElementById('loading').style.display='none';showToast(e.message,'error');}
 }
-
-async function openOrder(id) {
-  try {
-    const o = await OrdersAPI.get(id);
-    document.getElementById('modal-title').textContent = `Buyurtma #${o.id}`;
-    document.getElementById('modal-body').innerHTML = `
-      <div class="grid grid-cols-2 gap-3">
-        <div class="card !p-3"><span class="text-gray-400 text-xs">Status</span><br/>
-          <span class="badge badge-${o.status} mt-1">${statusLabel(o.status)}</span></div>
-        <div class="card !p-3"><span class="text-gray-400 text-xs">Narx</span><br/>
-          <b class="text-primary">${formatMoney(o.total_fare)}</b></div>
-        <div class="card !p-3"><span class="text-gray-400 text-xs">Qayerdan</span><br/>${o.from_address || '—'}</div>
-        <div class="card !p-3"><span class="text-gray-400 text-xs">Qayerga</span><br/>${o.to_address || '—'}</div>
-        <div class="card !p-3"><span class="text-gray-400 text-xs">Masofa</span><br/>${o.distance_km || '—'} km</div>
-        <div class="card !p-3"><span class="text-gray-400 text-xs">To'lov</span><br/>${o.payment_type === 'cash' ? '💵 Naqd' : '📱 QR'}</div>
-      </div>
-    `;
-
-    const nextMap = { accepted:'arrived', arrived:'started', started:'done' };
-    const nextLabels = { arrived:'Keldim', started:'Boshlash', done:'Yakunlash' };
-    const next = nextMap[o.status];
-
-    document.getElementById('modal-actions').innerHTML = next ? `
-      <button onclick="changeStatus(${o.id},'${next}')" class="btn btn-primary flex-1">${nextLabels[next]}</button>
-      <button onclick="changeStatus(${o.id},'cancelled')" class="btn btn-danger">Bekor</button>
-    ` : '';
-
-    document.getElementById('modal').classList.remove('hidden');
-  } catch (e) { showToast(e.message, 'error'); }
+async function openOrder(id){
+  try{
+    const o=await OrdersAPI.get(id);
+    document.getElementById('modal-title').textContent='Buyurtma #'+o.id;
+    document.getElementById('modal-body').innerHTML=`
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:1rem;">
+        <div style="background:var(--bg3);border-radius:10px;padding:12px;">
+          <div style="font-size:0.68rem;color:var(--text2);">STATUS</div>
+          <span class="badge badge-${o.status} mt-1">${statusLabel(o.status)}</span>
+        </div>
+        <div style="background:var(--bg3);border-radius:10px;padding:12px;">
+          <div style="font-size:0.68rem;color:var(--text2);">NARX</div>
+          <div style="font-weight:700;color:var(--gold);margin-top:4px;">${fmoney(o.total_fare)}</div>
+        </div>
+        <div style="background:var(--bg3);border-radius:10px;padding:12px;">
+          <div style="font-size:0.68rem;color:var(--text2);">QAYERDAN</div>
+          <div style="font-size:0.82rem;margin-top:4px;">${o.from_address||'—'}</div>
+        </div>
+        <div style="background:var(--bg3);border-radius:10px;padding:12px;">
+          <div style="font-size:0.68rem;color:var(--text2);">QAYERGA</div>
+          <div style="font-size:0.82rem;margin-top:4px;">${o.to_address||'—'}</div>
+        </div>
+        <div style="background:var(--bg3);border-radius:10px;padding:12px;">
+          <div style="font-size:0.68rem;color:var(--text2);">MASOFA</div>
+          <div style="margin-top:4px;">${o.distance_km||'—'} km</div>
+        </div>
+        <div style="background:var(--bg3);border-radius:10px;padding:12px;">
+          <div style="font-size:0.68rem;color:var(--text2);">TO'LOV</div>
+          <div style="margin-top:4px;">${o.payment_type==='cash'?'💵 Naqd':'📱 QR'}</div>
+        </div>
+      </div>`;
+    const nmap={accepted:'arrived',arrived:'started',started:'done'};
+    const nlbl={arrived:'🚗 Keldim',started:'▶ Boshlash',done:'✅ Yakunlash'};
+    const nx=nmap[o.status];
+    document.getElementById('modal-actions').innerHTML=nx?`
+      <button onclick="chst(${o.id},'${nx}')" class="btn btn-primary" style="flex:1;">${nlbl[nx]}</button>
+      <button onclick="chst(${o.id},'cancelled')" class="btn btn-danger">Bekor</button>`:'';
+    document.getElementById('modal').classList.add('open');
+  }catch(e){showToast(e.message,'error');}
 }
-
-async function changeStatus(id, status) {
-  try {
-    await OrdersAPI.setStatus(id, status);
-    showToast('Status yangilandi', 'success');
-    closeModal();
-    loadOrders(currentPage);
-  } catch (e) { showToast(e.message, 'error'); }
+async function chst(id,st){
+  try{await OrdersAPI.setStatus(id,st);showToast('Status yangilandi','success');closeModal();load(page);}
+  catch(e){showToast(e.message,'error');}
 }
-
-function closeModal() { document.getElementById('modal').classList.add('hidden'); }
-
-function renderPagination(total, next, prev) {
-  const el = document.getElementById('pagination');
-  el.innerHTML = `
-    <button onclick="loadOrders(${currentPage - 1})" ${!prev ? 'disabled' : ''} class="btn btn-outline text-sm">← Oldingi</button>
-    <span class="text-gray-400 text-sm self-center">Jami: ${total || 0}</span>
-    <button onclick="loadOrders(${currentPage + 1})" ${!next ? 'disabled' : ''} class="btn btn-outline text-sm">Keyingi →</button>
-  `;
-}
-
-function formatMoney(v) { return v != null ? Number(v).toLocaleString('uz') + ' so\'m' : '—'; }
-function formatDate(d)  { return d ? new Date(d).toLocaleString('uz') : '—'; }
-function statusLabel(s) {
-  return {new:'Yangi',accepted:'Qabul',arrived:'Keldi',started:"Yo'lda",done:'Tugadi',cancelled:'Bekor'}[s]||s;
+function closeModal(){document.getElementById('modal').classList.remove('open');}
+function renderPag(total,next,prev){
+  document.getElementById('pagination').innerHTML=`
+    <button class="page-btn" onclick="load(${page-1})" ${!prev?'disabled':''}>←</button>
+    <span class="page-info">Jami: ${total||0}</span>
+    <button class="page-btn" onclick="load(${page+1})" ${!next?'disabled':''}>→</button>`;
 }
 </script>
 {% endblock %}

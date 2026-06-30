@@ -1,185 +1,101 @@
 {% extends "shared/base.html" %}
 {% block title %}Tariflar — SmartTaxi Admin{% endblock %}
-{% block navbar %}{% endblock %}
-{% block main_class %}{% endblock %}
-
-{% block content %}
-<aside class="sidebar">
-  <div class="text-primary font-bold text-lg mb-6 px-2">🚕 Admin</div>
-  <a href="/admin/" class="sidebar-link">📊 Dashboard</a>
-  <a href="/admin/drivers/" class="sidebar-link">🚗 Haydovchilar</a>
-  <a href="/admin/orders/" class="sidebar-link">📋 Buyurtmalar</a>
-  <a href="/admin/tariffs/" class="sidebar-link active">💰 Tariflar</a>
-  <div class="mt-auto pt-4 border-t border-dark-border">
-    <button onclick="logout()" class="sidebar-link w-full text-left text-danger hover:bg-red-900/20">🚪 Chiqish</button>
+{% block sidebar_nav %}
+<a href="/admin-panel/" class="nav-link"><span class="nav-icon">📊</span> Dashboard</a>
+<a href="/admin-panel/drivers/" class="nav-link"><span class="nav-icon">🚗</span> Haydovchilar</a>
+<a href="/admin-panel/orders/" class="nav-link"><span class="nav-icon">📋</span> Buyurtmalar</a>
+<a href="/admin-panel/tariffs/" class="nav-link active"><span class="nav-icon">💰</span> Tariflar</a>
+{% endblock %}
+{% block body %}
+{% include "shared/sidebar.html" %}
+<div class="sidebar-content" style="max-width:1000px;">
+  <div class="page-header">
+    <h1><div class="page-title-icon">💰</div>Tariflar</h1>
+    <button onclick="openAdd()" class="btn btn-primary">+ Yangi tarif</button>
   </div>
-</aside>
-
-<div class="sidebar-content max-w-4xl">
-  <div class="flex items-center justify-between mb-6">
-    <h1 class="text-xl font-bold">💰 Tariflar</h1>
-    <button onclick="openAddModal()" class="btn btn-primary">+ Yangi tarif</button>
-  </div>
-
-  <div id="loading" class="flex justify-center py-16"><div class="spinner"></div></div>
-  <div id="tariffs-grid" class="hidden grid grid-cols-1 md:grid-cols-3 gap-4"></div>
-  <p id="empty" class="text-gray-500 text-center py-16 hidden">Tariflar topilmadi</p>
+  <div id="loading" style="display:flex;justify-content:center;padding:4rem;"><div class="spinner"></div></div>
+  <div class="grid grid-3" id="grid" style="display:none;"></div>
+  <div id="empty" style="display:none;" class="empty-state"><div class="empty-icon">💰</div><h3>Tarif topilmadi</h3></div>
 </div>
 
-<!-- Add/Edit modal -->
-<div id="tariff-modal" class="fixed inset-0 bg-black/70 z-50 hidden flex items-center justify-center p-4">
-  <div class="card w-full max-w-md relative">
-    <button onclick="closeModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white text-xl">✕</button>
-    <h2 class="font-bold text-lg mb-5" id="modal-title">Yangi tarif</h2>
-    <div class="space-y-3">
-      <div>
-        <label class="text-xs text-gray-400">Kategoriya</label>
-        <select id="t-category" class="input mt-1">
-          <option value="start">Start</option>
-          <option value="comfort">Comfort</option>
-          <option value="cargo">Cargo</option>
-        </select>
+<div class="modal-overlay" id="modal">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <h2 style="margin-bottom:1.25rem;" id="modal-title">Yangi tarif</h2>
+    <div style="display:flex;flex-direction:column;gap:1rem;">
+      <div class="form-group"><label class="form-label">Kategoriya</label>
+        <select id="t-cat" class="input"><option value="start">Start</option><option value="comfort">Comfort</option><option value="cargo">Cargo</option></select>
       </div>
-      <div>
-        <label class="text-xs text-gray-400">Boshlang'ich narx (so'm)</label>
-        <input id="t-base-fare" type="number" class="input mt-1" placeholder="4000" min="1" />
-      </div>
-      <div>
-        <label class="text-xs text-gray-400">1 km narxi (so'm)</label>
-        <input id="t-per-km" type="number" class="input mt-1" placeholder="1800" min="1" />
-      </div>
-      <div>
-        <label class="text-xs text-gray-400">Shoshilinch kam ustama (so'm)</label>
-        <input id="t-rush-low" type="number" class="input mt-1" placeholder="3000" min="0" />
-      </div>
-      <div>
-        <label class="text-xs text-gray-400">Shoshilinch yuqori ustama (so'm)</label>
-        <input id="t-rush-high" type="number" class="input mt-1" placeholder="5000" min="0" />
-      </div>
-      <label class="flex items-center gap-2 cursor-pointer">
-        <input type="checkbox" id="t-active" checked class="accent-primary w-4 h-4" />
-        <span class="text-sm">Faol</span>
+      <div class="form-group"><label class="form-label">Boshlang'ich narx (so'm)</label><input id="t-base" type="number" class="input" placeholder="4000" /></div>
+      <div class="form-group"><label class="form-label">1 km narxi (so'm)</label><input id="t-km" type="number" class="input" placeholder="1800" /></div>
+      <div class="form-group"><label class="form-label">Shoshilinch kam ustama</label><input id="t-rl" type="number" class="input" placeholder="3000" /></div>
+      <div class="form-group"><label class="form-label">Shoshilinch yuqori ustama</label><input id="t-rh" type="number" class="input" placeholder="5000" /></div>
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:0.875rem;">
+        <input type="checkbox" id="t-active" checked style="accent-color:var(--gold);width:16px;height:16px;" /> Faol
       </label>
     </div>
-    <button onclick="saveTariff()" class="btn btn-primary w-full mt-5" id="save-btn">Saqlash</button>
+    <button onclick="save()" class="btn btn-primary btn-block mt-4" id="save-btn">Saqlash</button>
   </div>
 </div>
 {% endblock %}
-
 {% block extra_js %}
 <script>
-let editingId = null;
-
-document.addEventListener('DOMContentLoaded', () => {
-  if (!requireAuth(['admin'])) return;
-  loadTariffs();
-});
-
-async function loadTariffs() {
-  const loading = document.getElementById('loading');
-  const grid    = document.getElementById('tariffs-grid');
-  const empty   = document.getElementById('empty');
-
-  try {
-    const res      = await OrdersAPI.getTariffs();
-    const tariffs  = res.results || res;
-    loading.classList.add('hidden');
-    if (!tariffs.length) { empty.classList.remove('hidden'); return; }
-    grid.classList.remove('hidden');
-
-    grid.innerHTML = tariffs.map(t => `
-      <div class="card border-2 ${t.is_active ? 'border-primary/30' : 'border-dark-border opacity-60'}">
-        <div class="flex items-center justify-between mb-4">
+let editId=null;
+document.addEventListener('DOMContentLoaded',()=>{ if(!requireAuth(['admin']))return; initSidebarUser(); load(); });
+async function load(){
+  try{
+    const res=await OrdersAPI.getTariffs();
+    const tariffs=res.results||res;
+    document.getElementById('loading').style.display='none';
+    if(!tariffs.length){document.getElementById('empty').style.display='block';return;}
+    document.getElementById('grid').style.display='grid';
+    document.getElementById('grid').innerHTML=tariffs.map(t=>`
+      <div class="card" style="border:2px solid ${t.is_active?'rgba(245,166,35,0.3)':'var(--border)'};${t.is_active?'':'opacity:0.6;'}">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
           <div>
-            <span class="text-lg font-bold">${carTypeLabel(t.category)}</span>
-            <span class="badge ${t.is_active ? 'badge-online' : 'badge-offline'} ml-2 text-xs">
-              ${t.is_active ? 'Faol' : 'Nofaol'}
-            </span>
+            <span style="font-size:1.1rem;font-weight:700;">${carEmoji(t.category)} ${carLabel(t.category)}</span>
+            <span class="badge ${t.is_active?'badge-online':'badge-offline'}" style="margin-left:6px;">${t.is_active?'Faol':'Nofaol'}</span>
           </div>
-          <button onclick="openEditModal(${JSON.stringify(t).replace(/"/g,'&quot;')})" class="btn btn-outline text-xs px-3">Tahrirlash</button>
+          <button onclick='openEdit(${JSON.stringify(t)})' class="btn btn-outline btn-sm">Tahrirlash</button>
         </div>
-        <div class="space-y-2 text-sm">
-          <div class="flex justify-between">
-            <span class="text-gray-400">Boshlang'ich:</span>
-            <span class="font-semibold">${Number(t.base_fare).toLocaleString('uz')} so'm</span>
-          </div>
-          <div class="flex justify-between">
-            <span class="text-gray-400">1 km:</span>
-            <span class="font-semibold">${Number(t.per_km).toLocaleString('uz')} so'm</span>
-          </div>
-          <div class="flex justify-between">
-            <span class="text-gray-400">Shoshilinch (kam):</span>
-            <span>${Number(t.rush_fee_low).toLocaleString('uz')} so'm</span>
-          </div>
-          <div class="flex justify-between">
-            <span class="text-gray-400">Shoshilinch (yuqori):</span>
-            <span>${Number(t.rush_fee_high).toLocaleString('uz')} so'm</span>
-          </div>
+        <div style="display:flex;flex-direction:column;gap:8px;font-size:0.875rem;">
+          <div style="display:flex;justify-content:space-between;"><span style="color:var(--text2);">Boshlang'ich:</span><b>${Number(t.base_fare).toLocaleString('uz-UZ')} so'm</b></div>
+          <div style="display:flex;justify-content:space-between;"><span style="color:var(--text2);">1 km:</span><b>${Number(t.per_km).toLocaleString('uz-UZ')} so'm</b></div>
+          <div style="display:flex;justify-content:space-between;"><span style="color:var(--text2);">Shoshilinch (kam):</span>${Number(t.rush_fee_low).toLocaleString('uz-UZ')} so'm</div>
+          <div style="display:flex;justify-content:space-between;"><span style="color:var(--text2);">Shoshilinch (yuqori):</span>${Number(t.rush_fee_high).toLocaleString('uz-UZ')} so'm</div>
         </div>
-        ${t.example_fare_5km ? `
-          <div class="mt-4 pt-3 border-t border-dark-border text-xs text-gray-400">
-            <p>5 km misol: <span class="text-white font-medium">${JSON.stringify(t.example_fare_5km)}</span></p>
-          </div>
-        ` : ''}
-      </div>
-    `).join('');
-  } catch (e) {
-    document.getElementById('loading').classList.add('hidden');
-    showToast(e.message, 'error');
-  }
+      </div>`).join('');
+  }catch(e){document.getElementById('loading').style.display='none';showToast(e.message,'error');}
 }
-
-function openAddModal() {
-  editingId = null;
-  document.getElementById('modal-title').textContent = 'Yangi tarif';
-  ['t-category','t-base-fare','t-per-km','t-rush-low','t-rush-high'].forEach(id => {
-    document.getElementById(id).value = '';
-  });
-  document.getElementById('t-active').checked = true;
-  document.getElementById('tariff-modal').classList.remove('hidden');
+function openAdd(){
+  editId=null;
+  document.getElementById('modal-title').textContent='Yangi tarif';
+  ['t-cat','t-base','t-km','t-rl','t-rh'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('t-active').checked=true;
+  document.getElementById('modal').classList.add('open');
 }
-
-function openEditModal(t) {
-  editingId = t.id;
-  document.getElementById('modal-title').textContent = `Tarif tahrirlash — ${carTypeLabel(t.category)}`;
-  document.getElementById('t-category').value  = t.category;
-  document.getElementById('t-base-fare').value = t.base_fare;
-  document.getElementById('t-per-km').value    = t.per_km;
-  document.getElementById('t-rush-low').value  = t.rush_fee_low;
-  document.getElementById('t-rush-high').value = t.rush_fee_high;
-  document.getElementById('t-active').checked  = t.is_active;
-  document.getElementById('tariff-modal').classList.remove('hidden');
+function openEdit(t){
+  editId=t.id;
+  document.getElementById('modal-title').textContent='Tahrirlash — '+carLabel(t.category);
+  document.getElementById('t-cat').value=t.category;
+  document.getElementById('t-base').value=t.base_fare;
+  document.getElementById('t-km').value=t.per_km;
+  document.getElementById('t-rl').value=t.rush_fee_low;
+  document.getElementById('t-rh').value=t.rush_fee_high;
+  document.getElementById('t-active').checked=t.is_active;
+  document.getElementById('modal').classList.add('open');
 }
-
-function closeModal() { document.getElementById('tariff-modal').classList.add('hidden'); }
-
-async function saveTariff() {
-  const payload = {
-    category:      document.getElementById('t-category').value,
-    base_fare:     Number(document.getElementById('t-base-fare').value),
-    per_km:        Number(document.getElementById('t-per-km').value),
-    rush_fee_low:  Number(document.getElementById('t-rush-low').value) || 0,
-    rush_fee_high: Number(document.getElementById('t-rush-high').value) || 0,
-    is_active:     document.getElementById('t-active').checked,
-  };
-  if (!payload.base_fare || !payload.per_km) {
-    showToast('Narxlarni to\'ldiring', 'error'); return;
-  }
-  const btn = document.getElementById('save-btn');
-  btn.disabled = true; btn.textContent = 'Saqlanmoqda...';
-  try {
-    if (editingId) {
-      await api.put(`/api/tariffs/${editingId}/`, payload);
-    } else {
-      await api.post('/api/tariffs/', payload);
-    }
-    showToast('Tarif saqlandi!', 'success');
-    closeModal();
-    loadTariffs();
-  } catch (e) { showToast(e.message, 'error'); }
-  finally { btn.disabled = false; btn.textContent = 'Saqlash'; }
+function closeModal(){document.getElementById('modal').classList.remove('open');}
+async function save(){
+  const p={category:document.getElementById('t-cat').value,base_fare:Number(document.getElementById('t-base').value),
+    per_km:Number(document.getElementById('t-km').value),rush_fee_low:Number(document.getElementById('t-rl').value)||0,
+    rush_fee_high:Number(document.getElementById('t-rh').value)||0,is_active:document.getElementById('t-active').checked};
+  if(!p.base_fare||!p.per_km){showToast("Narxlarni to'ldiring",'warn');return;}
+  const btn=document.getElementById('save-btn');btn.disabled=true;btn.textContent='Saqlanmoqda...';
+  try{await OrdersAPI.saveTariff(editId,p);showToast('Tarif saqlandi ✓','success');closeModal();load();}
+  catch(e){showToast(e.message,'error');}
+  finally{btn.disabled=false;btn.textContent='Saqlash';}
 }
-
-function carTypeLabel(t) { return {start:'🚗 Start',comfort:'🚙 Comfort',cargo:'🚚 Cargo'}[t]||t; }
+function carEmoji(t){return {start:'🚗',comfort:'🚙',cargo:'🚚'}[t]||'';}
 </script>
 {% endblock %}

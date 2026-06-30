@@ -1,90 +1,138 @@
 {% extends "shared/base.html" %}
-{% block title %}Haydovchi panel — SmartTaxi{% endblock %}
-{% block navbar %}{% endblock %}
+{% block title %}Haydovchi — SmartTaxi{% endblock %}
 
-{% block main_class %}{% endblock %}
+{% block body %}
+{% include "shared/sidebar.html" %}
 
-{% block content %}
-<!-- Sidebar -->
-<aside class="sidebar">
-  <div class="text-primary font-bold text-lg mb-6 px-2">🚕 SmartTaxi</div>
-  <a href="/driver/" class="sidebar-link active">🏠 Asosiy</a>
-  <a href="/driver/orders/" class="sidebar-link">📋 Buyurtmalar</a>
-  <a href="/driver/wallet/" class="sidebar-link">💳 Hamyon</a>
-  <a href="/driver/profile/" class="sidebar-link">👤 Profil</a>
-  <div class="mt-auto pt-4 border-t border-dark-border">
-    <button onclick="logout()" class="sidebar-link w-full text-left text-danger hover:bg-red-900/20">
-      🚪 Chiqish
-    </button>
-  </div>
-</aside>
-
-<!-- Main content -->
 <div class="sidebar-content">
-  <!-- Header -->
-  <div class="flex items-center justify-between mb-6">
-    <div>
-      <h1 class="text-xl font-bold" id="greeting">Salom!</h1>
-      <p class="text-gray-400 text-sm" id="car-info">—</p>
-    </div>
-    <!-- Online/Offline toggle -->
-    <div class="flex items-center gap-3">
-      <span class="text-sm text-gray-400">Holat:</span>
-      <button id="status-btn" onclick="toggleOnline()" class="btn btn-outline text-sm px-5">
-        —
-      </button>
+
+  <!-- Mobile header -->
+  <div style="display:none;align-items:center;justify-content:space-between;margin-bottom:1.5rem;" id="mob-header">
+    <button onclick="openSidebar()" style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);cursor:pointer;font-size:1rem;">☰</button>
+    <span style="font-family:'Syne',sans-serif;font-weight:800;color:var(--gold);">SmartTaxi</span>
+    <div style="width:40px;"></div>
+  </div>
+
+  <!-- Page header -->
+  <div class="page-header">
+    <h1>
+      <div class="page-title-icon">🚗</div>
+      Haydovchi paneli
+    </h1>
+    <!-- Online toggle -->
+    <div style="display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:0.75rem 1.25rem;">
+      <div id="status-pulse" style="width:10px;height:10px;border-radius:50%;background:var(--text3);transition:background 0.3s;"></div>
+      <span id="status-text" style="font-size:0.85rem;font-weight:600;">Yuklanmoqda...</span>
+      <label class="toggle" id="toggle-wrap" title="Online/Offline">
+        <input type="checkbox" id="online-toggle" onchange="toggleOnline()" />
+        <span class="toggle-slider"></span>
+      </label>
     </div>
   </div>
 
   <!-- Stats -->
-  <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+  <div class="grid grid-4 mb-6">
     <div class="stat-card">
-      <div class="label">Balans</div>
-      <div class="value" id="stat-balance">—</div>
+      <div class="stat-icon gold">💰</div>
+      <div class="stat-label">Balans</div>
+      <div class="stat-value" id="s-balance">—</div>
+      <div class="stat-sub">Hamyon holati</div>
     </div>
     <div class="stat-card">
-      <div class="label">Aktiv buyurtmalar</div>
-      <div class="value" id="stat-active">—</div>
+      <div class="stat-icon blue">📋</div>
+      <div class="stat-label">Bugungi safarlar</div>
+      <div class="stat-value" id="s-today">—</div>
+      <div class="stat-sub">Jami bajarilgan</div>
     </div>
     <div class="stat-card">
-      <div class="label">Avtomobil turi</div>
-      <div class="value text-base mt-1" id="stat-cartype">—</div>
+      <div class="stat-icon green">✅</div>
+      <div class="stat-label">Avtomobil</div>
+      <div class="stat-value" id="s-car" style="font-size:1.1rem;margin-top:6px;">—</div>
+      <div class="stat-sub" id="s-carnumber">—</div>
     </div>
     <div class="stat-card">
-      <div class="label">Holat</div>
-      <div class="value text-base mt-1" id="stat-status">—</div>
+      <div class="stat-icon gold">⭐</div>
+      <div class="stat-label">Reyting</div>
+      <div class="stat-value" id="s-rating">—</div>
+      <div class="stat-sub">Yo'lovchilar bahosi</div>
     </div>
   </div>
 
-  <!-- Active order panel -->
-  <div id="active-order-panel" class="card mb-6 hidden">
-    <h2 class="font-semibold mb-4 text-primary">🟢 Joriy buyurtma</h2>
-    <div id="active-order-info" class="grid grid-cols-2 gap-3 text-sm mb-4"></div>
-    <div class="flex gap-3 flex-wrap" id="active-order-actions"></div>
-  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;" class="two-col">
 
-  <!-- Recent orders table -->
-  <div class="card">
-    <div class="flex items-center justify-between mb-4">
-      <h2 class="font-semibold">So'nggi buyurtmalar</h2>
-      <a href="/driver/orders/" class="text-primary text-sm hover:underline">Barchasi →</a>
+    <!-- Active order -->
+    <div>
+      <div class="card" id="active-order-card" style="display:none;border-color:rgba(48,209,88,0.3);margin-bottom:1.5rem;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;">
+          <h2 style="display:flex;align-items:center;gap:8px;">
+            <span style="color:var(--green);">●</span> Joriy buyurtma
+          </h2>
+          <span class="badge" id="ao-status">—</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:1.25rem;">
+          <div style="background:var(--bg3);border-radius:10px;padding:0.75rem;">
+            <div style="font-size:0.7rem;color:var(--text2);margin-bottom:4px;">BUYURTMA #</div>
+            <div class="font-bold text-gold" id="ao-id">—</div>
+          </div>
+          <div style="background:var(--bg3);border-radius:10px;padding:0.75rem;">
+            <div style="font-size:0.7rem;color:var(--text2);margin-bottom:4px;">NARX</div>
+            <div class="font-bold text-gold" id="ao-price">—</div>
+          </div>
+          <div style="background:var(--bg3);border-radius:10px;padding:0.75rem;">
+            <div style="font-size:0.7rem;color:var(--text2);margin-bottom:4px;">QAYERDAN</div>
+            <div style="font-size:0.8rem;" id="ao-from">—</div>
+          </div>
+          <div style="background:var(--bg3);border-radius:10px;padding:0.75rem;">
+            <div style="font-size:0.7rem;color:var(--text2);margin-bottom:4px;">QAYERGA</div>
+            <div style="font-size:0.8rem;" id="ao-to">—</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;" id="ao-actions"></div>
+      </div>
+
+      <!-- No active order -->
+      <div class="card" id="no-active-card" style="text-align:center;padding:2.5rem;">
+        <div style="font-size:3rem;margin-bottom:1rem;opacity:0.4;">🚗</div>
+        <h3 style="margin-bottom:0.5rem;">Aktiv buyurtma yo'q</h3>
+        <p style="color:var(--text2);font-size:0.85rem;">Online bo'ling — yangi buyurtmalar keladi</p>
+      </div>
     </div>
-    <div id="orders-loading" class="flex justify-center py-8">
-      <div class="spinner"></div>
+
+    <!-- Recent orders -->
+    <div class="card" style="overflow:hidden;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;">
+        <h2>So'nggi safarlar</h2>
+        <a href="/driver/orders/" style="color:var(--gold);font-size:0.8rem;text-decoration:none;font-weight:600;">
+          Barchasi →
+        </a>
+      </div>
+      <div id="recent-loading" style="display:flex;justify-content:center;padding:2rem;">
+        <div class="spinner"></div>
+      </div>
+      <div id="recent-list" style="display:none;"></div>
+      <div id="recent-empty" style="display:none;" class="empty-state">
+        <div class="empty-icon">📋</div>
+        <p>Hali sayohat yo'q</p>
+      </div>
     </div>
-    <div id="orders-table-wrap" class="hidden overflow-x-auto">
-      <table class="tbl">
-        <thead>
-          <tr>
-            <th>#</th><th>Manzil</th><th>Narx</th><th>Status</th><th>Sana</th>
-          </tr>
-        </thead>
-        <tbody id="orders-tbody"></tbody>
-      </table>
-    </div>
-    <p id="orders-empty" class="text-gray-500 text-center py-6 hidden">Buyurtmalar yo'q</p>
+
   </div>
 </div>
+
+<style>
+  @media(max-width:768px){
+    .two-col { grid-template-columns:1fr !important; }
+    #mob-header { display:flex !important; }
+    .grid-4 { grid-template-columns:repeat(2,1fr) !important; }
+  }
+</style>
+{% endblock %}
+
+{% block sidebar_nav %}
+<a href="/driver/" class="nav-link active"><span class="nav-icon">🏠</span> Bosh sahifa</a>
+<a href="/driver/orders/" class="nav-link"><span class="nav-icon">📋</span> Buyurtmalar</a>
+<a href="/driver/wallet/" class="nav-link"><span class="nav-icon">💳</span> Hamyon</a>
+<a href="/driver/profile/" class="nav-link"><span class="nav-icon">👤</span> Profil</a>
 {% endblock %}
 
 {% block extra_js %}
@@ -93,125 +141,113 @@ let driverData = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
   if (!requireAuth(['driver'])) return;
-  await loadDriverDashboard();
+  initSidebarUser();
+  await loadDashboard();
 });
 
-async function loadDriverDashboard() {
+async function loadDashboard() {
   try {
     driverData = await DriversAPI.me();
-    renderProfile(driverData);
-    await loadOrders();
-  } catch (e) {
-    showToast(e.message, 'error');
-  }
+    renderStats(driverData);
+    await loadRecentOrders();
+  } catch(e) { showToast(e.message,'error'); }
 }
 
-function renderProfile(d) {
-  document.getElementById('greeting').textContent = `Salom, ${d.user?.first_name || 'Haydovchi'}!`;
-  document.getElementById('car-info').textContent = `${d.car_model} • ${d.car_number}`;
-  document.getElementById('stat-balance').textContent = formatMoney(d.wallet_balance);
-  document.getElementById('stat-active').textContent = d.active_orders_count ?? '0';
-  document.getElementById('stat-cartype').textContent = carTypeLabel(d.car_type);
-  document.getElementById('stat-status').textContent = d.is_online ? '🟢 Online' : '⚫ Offline';
+function renderStats(d) {
+  document.getElementById('s-balance').textContent  = fmoney(d.wallet_balance);
+  document.getElementById('s-today').textContent    = d.today_orders_count ?? '—';
+  document.getElementById('s-car').textContent      = d.car_model || '—';
+  document.getElementById('s-carnumber').textContent= d.car_number || '—';
+  document.getElementById('s-rating').textContent   = d.rating ? Number(d.rating).toFixed(1) : '—';
 
-  const btn = document.getElementById('status-btn');
-  btn.textContent = d.is_online ? '🔴 Offline bo\'lish' : '🟢 Online bo\'lish';
-  btn.className = `btn text-sm px-5 ${d.is_online ? 'btn-danger' : 'btn-success'}`;
-}
+  const tog = document.getElementById('online-toggle');
+  const pulse = document.getElementById('status-pulse');
+  const stxt  = document.getElementById('status-text');
+  tog.checked = !!d.is_online;
+  pulse.style.background = d.is_online ? 'var(--green)' : 'var(--text3)';
+  if (d.is_online) pulse.classList.add('pulse');
+  stxt.textContent = d.is_online ? 'Online' : 'Offline';
 
-async function toggleOnline() {
-  const btn = document.getElementById('status-btn');
-  btn.disabled = true;
-  try {
-    const newStatus = !driverData.is_online;
-    await DriversAPI.setStatus(newStatus);
-    driverData.is_online = newStatus;
-    renderProfile(driverData);
-    showToast(newStatus ? 'Online bo\'ldingiz!' : 'Offline bo\'ldingiz', 'info');
-  } catch (e) {
-    showToast(e.message, 'error');
-  } finally {
-    btn.disabled = false;
-  }
-}
-
-async function loadOrders() {
-  const loading = document.getElementById('orders-loading');
-  const wrap    = document.getElementById('orders-table-wrap');
-  const empty   = document.getElementById('orders-empty');
-  const tbody   = document.getElementById('orders-tbody');
-
-  try {
-    const res = await OrdersAPI.list({ page: 1 });
-    const orders = res.results || res;
-    loading.classList.add('hidden');
-
-    if (!orders.length) { empty.classList.remove('hidden'); return; }
-    wrap.classList.remove('hidden');
-
-    tbody.innerHTML = orders.map(o => `
-      <tr>
-        <td class="font-mono text-primary">#${o.id}</td>
-        <td class="max-w-xs truncate">${o.to_address || '—'}</td>
-        <td>${formatMoney(o.total_fare)}</td>
-        <td><span class="badge badge-${o.status}">${statusLabel(o.status)}</span></td>
-        <td class="text-gray-400">${formatDate(o.created_at)}</td>
-      </tr>
-    `).join('');
-
-    // Aktiv buyurtmani ajratib ko'rsatish
-    const active = orders.find(o => ['accepted','arrived','started'].includes(o.status));
-    if (active) renderActiveOrder(active);
-
-  } catch (e) {
-    loading.classList.add('hidden');
-    showToast(e.message, 'error');
+  const active = d.active_order;
+  if (active) renderActiveOrder(active);
+  else {
+    document.getElementById('active-order-card').style.display = 'none';
+    document.getElementById('no-active-card').style.display = 'block';
   }
 }
 
 function renderActiveOrder(o) {
-  const panel   = document.getElementById('active-order-panel');
-  const info    = document.getElementById('active-order-info');
-  const actions = document.getElementById('active-order-actions');
-  panel.classList.remove('hidden');
+  document.getElementById('no-active-card').style.display = 'none';
+  document.getElementById('active-order-card').style.display = 'block';
+  document.getElementById('ao-id').textContent    = '#' + o.id;
+  document.getElementById('ao-price').textContent = fmoney(o.total_fare);
+  document.getElementById('ao-from').textContent  = o.from_address || '—';
+  document.getElementById('ao-to').textContent    = o.to_address   || '—';
+  document.getElementById('ao-status').className  = 'badge badge-' + o.status;
+  document.getElementById('ao-status').textContent= statusLabel(o.status);
 
-  info.innerHTML = `
-    <div><span class="text-gray-400">Buyurtma #</span><br/><b>#${o.id}</b></div>
-    <div><span class="text-gray-400">Narx</span><br/><b>${formatMoney(o.total_fare)}</b></div>
-    <div><span class="text-gray-400">Manzildan</span><br/>${o.from_address || '—'}</div>
-    <div><span class="text-gray-400">Manzilga</span><br/>${o.to_address || '—'}</div>
-  `;
-
-  const nextMap = { accepted: 'arrived', arrived: 'started', started: 'done' };
-  const nextLabels = { arrived: 'Keldim', started: 'Boshlash', done: 'Yakunlash' };
-  const nextStatus = nextMap[o.status];
-
-  actions.innerHTML = nextStatus ? `
-    <button onclick="changeOrderStatus(${o.id}, '${nextStatus}')" class="btn btn-primary">
-      ${nextLabels[nextStatus]}
-    </button>
-    <button onclick="changeOrderStatus(${o.id}, 'cancelled')" class="btn btn-danger">
-      Bekor qilish
-    </button>
+  const nextMap = {accepted:'arrived',arrived:'started',started:'done'};
+  const nextLbl = {arrived:'🚗 Keldim',started:'▶ Boshlash',done:'✅ Yakunlash'};
+  const next = nextMap[o.status];
+  document.getElementById('ao-actions').innerHTML = next ? `
+    <button onclick="doStatus(${o.id},'${next}')" class="btn btn-primary">${nextLbl[next]}</button>
+    <button onclick="doStatus(${o.id},'cancelled')" class="btn btn-danger btn-sm">Bekor</button>
   ` : '';
 }
 
-async function changeOrderStatus(orderId, status) {
+async function doStatus(id, status) {
   try {
-    await OrdersAPI.setStatus(orderId, status);
-    showToast('Status yangilandi', 'success');
-    await loadDriverDashboard();
-  } catch (e) {
-    showToast(e.message, 'error');
+    await OrdersAPI.setStatus(id, status);
+    showToast('Status yangilandi ✓', 'success');
+    await loadDashboard();
+  } catch(e) { showToast(e.message,'error'); }
+}
+
+async function toggleOnline() {
+  const on = document.getElementById('online-toggle').checked;
+  const pulse = document.getElementById('status-pulse');
+  const stxt  = document.getElementById('status-text');
+  try {
+    await DriversAPI.setStatus(on);
+    pulse.style.background = on ? 'var(--green)' : 'var(--text3)';
+    stxt.textContent = on ? 'Online' : 'Offline';
+    showToast(on ? '🟢 Online bo\'ldingiz!' : '⚫ Offline bo\'ldingiz', 'info');
+  } catch(e) {
+    document.getElementById('online-toggle').checked = !on;
+    showToast(e.message,'error');
   }
 }
 
-// ─── Helpers ─────────────────────────────────────────────────────
-function formatMoney(v) { return v != null ? Number(v).toLocaleString('uz') + ' so\'m' : '—'; }
-function formatDate(d)  { return d ? new Date(d).toLocaleDateString('uz') : '—'; }
-function carTypeLabel(t) { return { start:'Start', comfort:'Comfort', cargo:'Cargo' }[t] || t; }
-function statusLabel(s) {
-  return { new:'Yangi', accepted:'Qabul', arrived:'Keldi', started:'Yo\'lda', done:'Tugadi', cancelled:'Bekor' }[s] || s;
+async function loadRecentOrders() {
+  const loading = document.getElementById('recent-loading');
+  const list    = document.getElementById('recent-list');
+  const empty   = document.getElementById('recent-empty');
+  try {
+    const res = await OrdersAPI.list({ page:1 });
+    const orders = (res.results||res).slice(0,6);
+    loading.style.display = 'none';
+    if (!orders.length) { empty.style.display = 'block'; return; }
+    list.style.display = 'block';
+    list.innerHTML = orders.map(o => `
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:0.75rem 0;
+                  border-bottom:1px solid var(--border);">
+        <div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;">
+            <span style="color:var(--gold);font-weight:700;font-size:0.85rem;">#${o.id}</span>
+            <span class="badge badge-${o.status}">${statusLabel(o.status)}</span>
+          </div>
+          <div style="color:var(--text2);font-size:0.75rem;">${o.to_address||'—'}</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-weight:700;font-size:0.875rem;">${fmoney(o.total_fare)}</div>
+          <div style="color:var(--text3);font-size:0.72rem;">${fdateshort(o.created_at)}</div>
+        </div>
+      </div>
+    `).join('');
+  } catch(e) {
+    loading.style.display = 'none';
+    showToast(e.message,'error');
+  }
 }
 </script>
 {% endblock %}

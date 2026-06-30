@@ -1,72 +1,64 @@
 {% extends "shared/base.html" %}
 {% block title %}Profil — SmartTaxi{% endblock %}
-{% block navbar %}{% endblock %}
-{% block main_class %}{% endblock %}
-
-{% block content %}
-<aside class="sidebar">
-  <div class="text-primary font-bold text-lg mb-6 px-2">🚕 SmartTaxi</div>
-  <a href="/passenger/" class="sidebar-link">🏠 Asosiy</a>
-  <a href="/passenger/orders/" class="sidebar-link">📋 Buyurtmalarim</a>
-  <a href="/passenger/profile/" class="sidebar-link active">👤 Profil</a>
-  <div class="mt-auto pt-4 border-t border-dark-border">
-    <button onclick="logout()" class="sidebar-link w-full text-left text-danger hover:bg-red-900/20">🚪 Chiqish</button>
+{% block sidebar_nav %}
+<a href="/passenger/" class="nav-link"><span class="nav-icon">🏠</span> Bosh sahifa</a>
+<a href="/passenger/orders/" class="nav-link"><span class="nav-icon">📋</span> Buyurtmalarim</a>
+<a href="/passenger/profile/" class="nav-link active"><span class="nav-icon">👤</span> Profil</a>
+{% endblock %}
+{% block body %}
+{% include "shared/sidebar.html" %}
+<div class="sidebar-content" style="max-width:700px;">
+  <div class="page-header">
+    <h1><div class="page-title-icon">👤</div>Mening profilim</h1>
   </div>
-</aside>
-
-<div class="sidebar-content max-w-2xl">
-  <h1 class="text-xl font-bold mb-6">👤 Mening profilim</h1>
-
   <div class="card">
-    <h2 class="font-semibold mb-4 text-gray-300">Shaxsiy ma'lumotlar</h2>
-    <div class="grid grid-cols-2 gap-4">
-      <div>
-        <label class="text-xs text-gray-400 font-medium">Ism</label>
-        <input id="first-name" type="text" class="input mt-1" placeholder="Ism" />
+    <h2 style="margin-bottom:1.25rem;">Shaxsiy ma'lumotlar</h2>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+      <div class="form-group">
+        <label class="form-label">Ism</label>
+        <input id="fname" class="input" placeholder="Ism" />
       </div>
-      <div>
-        <label class="text-xs text-gray-400 font-medium">Familiya</label>
-        <input id="last-name" type="text" class="input mt-1" placeholder="Familiya" />
+      <div class="form-group">
+        <label class="form-label">Familiya</label>
+        <input id="lname" class="input" placeholder="Familiya" />
       </div>
-      <div>
-        <label class="text-xs text-gray-400 font-medium">Telefon</label>
-        <input id="phone" type="text" class="input mt-1" disabled />
+      <div class="form-group">
+        <label class="form-label">Telefon</label>
+        <input id="phone" class="input" disabled style="opacity:0.5;" />
       </div>
-      <div>
-        <label class="text-xs text-gray-400 font-medium">Telegram ID</label>
-        <input id="telegram-id" type="number" class="input mt-1" placeholder="Ixtiyoriy" />
+      <div class="form-group">
+        <label class="form-label">Telegram ID</label>
+        <input id="tgid" class="input" placeholder="Ixtiyoriy" type="number" />
       </div>
     </div>
-    <button onclick="saveProfile()" class="btn btn-primary mt-4" id="save-btn">Saqlash</button>
+    <button onclick="save()" class="btn btn-primary mt-4" id="save-btn">💾 Saqlash</button>
   </div>
 </div>
 {% endblock %}
-
 {% block extra_js %}
 <script>
-document.addEventListener('DOMContentLoaded', async () => {
-  if (!requireAuth(['client'])) return;
-  try {
-    const u = await AuthAPI.me();
-    document.getElementById('first-name').value  = u.first_name  || '';
-    document.getElementById('last-name').value   = u.last_name   || '';
-    document.getElementById('phone').value       = u.phone       || '';
-    document.getElementById('telegram-id').value = u.telegram_id || '';
-  } catch (e) { showToast(e.message, 'error'); }
+document.addEventListener('DOMContentLoaded',async()=>{
+  if(!requireAuth(['client']))return;
+  initSidebarUser();
+  try{
+    const u=await AuthAPI.me();
+    document.getElementById('fname').value=u.first_name||'';
+    document.getElementById('lname').value=u.last_name||'';
+    document.getElementById('phone').value=u.phone||'';
+    document.getElementById('tgid').value=u.telegram_id||'';
+  }catch(e){showToast(e.message,'error');}
 });
-
-async function saveProfile() {
-  const btn = document.getElementById('save-btn');
-  btn.disabled = true; btn.textContent = 'Saqlanmoqda...';
-  try {
+async function save(){
+  const btn=document.getElementById('save-btn');btn.disabled=true;btn.textContent='Saqlanmoqda...';
+  try{
     await AuthAPI.updateProfile({
-      first_name:  document.getElementById('first-name').value.trim(),
-      last_name:   document.getElementById('last-name').value.trim(),
-      telegram_id: document.getElementById('telegram-id').value || null,
+      first_name:document.getElementById('fname').value.trim(),
+      last_name:document.getElementById('lname').value.trim(),
+      telegram_id:document.getElementById('tgid').value||null,
     });
-    showToast('Profil yangilandi!', 'success');
-  } catch (e) { showToast(e.message, 'error'); }
-  finally { btn.disabled = false; btn.textContent = 'Saqlash'; }
+    showToast('Profil yangilandi ✓','success');
+  }catch(e){showToast(e.message,'error');}
+  finally{btn.disabled=false;btn.textContent='💾 Saqlash';}
 }
 </script>
 {% endblock %}

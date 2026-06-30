@@ -1,115 +1,100 @@
 {% extends "shared/base.html" %}
 {% block title %}Profil — SmartTaxi{% endblock %}
-{% block navbar %}{% endblock %}
-{% block main_class %}{% endblock %}
-
-{% block content %}
-<aside class="sidebar">
-  <div class="text-primary font-bold text-lg mb-6 px-2">🚕 SmartTaxi</div>
-  <a href="/driver/" class="sidebar-link">🏠 Asosiy</a>
-  <a href="/driver/orders/" class="sidebar-link">📋 Buyurtmalar</a>
-  <a href="/driver/wallet/" class="sidebar-link">💳 Hamyon</a>
-  <a href="/driver/profile/" class="sidebar-link active">👤 Profil</a>
-  <div class="mt-auto pt-4 border-t border-dark-border">
-    <button onclick="logout()" class="sidebar-link w-full text-left text-danger hover:bg-red-900/20">🚪 Chiqish</button>
+{% block sidebar_nav %}
+<a href="/driver/" class="nav-link"><span class="nav-icon">🏠</span> Bosh sahifa</a>
+<a href="/driver/orders/" class="nav-link"><span class="nav-icon">📋</span> Buyurtmalar</a>
+<a href="/driver/wallet/" class="nav-link"><span class="nav-icon">💳</span> Hamyon</a>
+<a href="/driver/profile/" class="nav-link active"><span class="nav-icon">👤</span> Profil</a>
+{% endblock %}
+{% block body %}
+{% include "shared/sidebar.html" %}
+<div class="sidebar-content" style="max-width:700px;">
+  <div class="page-header">
+    <h1><div class="page-title-icon">👤</div>Mening profilim</h1>
   </div>
-</aside>
 
-<div class="sidebar-content max-w-2xl">
-  <h1 class="text-xl font-bold mb-6">👤 Mening profilim</h1>
-
-  <!-- User info -->
   <div class="card mb-5">
-    <h2 class="font-semibold mb-4 text-gray-300">Shaxsiy ma'lumotlar</h2>
-    <div class="grid grid-cols-2 gap-4">
-      <div>
-        <label class="text-xs text-gray-400 font-medium">Ism</label>
-        <input id="first-name" type="text" class="input mt-1" placeholder="Ism" />
+    <h2 style="margin-bottom:1.25rem;">Shaxsiy ma'lumotlar</h2>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+      <div class="form-group">
+        <label class="form-label">Ism</label>
+        <input id="fname" class="input" placeholder="Ism" />
       </div>
-      <div>
-        <label class="text-xs text-gray-400 font-medium">Familiya</label>
-        <input id="last-name" type="text" class="input mt-1" placeholder="Familiya" />
+      <div class="form-group">
+        <label class="form-label">Familiya</label>
+        <input id="lname" class="input" placeholder="Familiya" />
       </div>
-      <div>
-        <label class="text-xs text-gray-400 font-medium">Telefon</label>
-        <input id="phone" type="text" class="input mt-1" disabled />
+      <div class="form-group">
+        <label class="form-label">Telefon</label>
+        <input id="phone" class="input" disabled style="opacity:0.5;" />
       </div>
-      <div>
-        <label class="text-xs text-gray-400 font-medium">Telegram ID</label>
-        <input id="telegram-id" type="number" class="input mt-1" placeholder="Ixtiyoriy" />
+      <div class="form-group">
+        <label class="form-label">Telegram ID</label>
+        <input id="tgid" class="input" placeholder="Ixtiyoriy" type="number" />
       </div>
     </div>
-    <button onclick="saveProfile()" class="btn btn-primary mt-4" id="save-profile-btn">Saqlash</button>
+    <button onclick="saveUser()" class="btn btn-primary mt-4" id="save-user-btn">💾 Saqlash</button>
   </div>
 
-  <!-- Car info -->
   <div class="card">
-    <h2 class="font-semibold mb-4 text-gray-300">Avtomobil ma'lumotlari</h2>
-    <div class="grid grid-cols-2 gap-4">
-      <div>
-        <label class="text-xs text-gray-400 font-medium">Avtomobil modeli</label>
-        <input id="car-model" type="text" class="input mt-1" placeholder="Chevrolet Malibu 2022" />
+    <h2 style="margin-bottom:1.25rem;">🚗 Avtomobil ma'lumotlari</h2>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+      <div class="form-group">
+        <label class="form-label">Model</label>
+        <input id="car-model" class="input" placeholder="Chevrolet Malibu 2022" />
       </div>
-      <div>
-        <label class="text-xs text-gray-400 font-medium">Davlat raqami</label>
-        <input id="car-number" type="text" class="input mt-1" placeholder="01A123BC" />
+      <div class="form-group">
+        <label class="form-label">Davlat raqami</label>
+        <input id="car-num" class="input" placeholder="01A123BC" />
       </div>
-      <div>
-        <label class="text-xs text-gray-400 font-medium">Avtomobil turi</label>
-        <input id="car-type" type="text" class="input mt-1" disabled />
+      <div class="form-group">
+        <label class="form-label">Avtomobil turi</label>
+        <input id="car-type" class="input" disabled style="opacity:0.5;" />
       </div>
     </div>
-    <button onclick="saveCar()" class="btn btn-primary mt-4" id="save-car-btn">Avtomobilni yangilash</button>
+    <button onclick="saveCar()" class="btn btn-primary mt-4" id="save-car-btn">💾 Avtomobilni yangilash</button>
   </div>
 </div>
 {% endblock %}
-
 {% block extra_js %}
 <script>
-document.addEventListener('DOMContentLoaded', async () => {
-  if (!requireAuth(['driver'])) return;
-  await loadProfile();
+document.addEventListener('DOMContentLoaded',async()=>{
+  if(!requireAuth(['driver']))return;
+  initSidebarUser();
+  try{
+    const d=await DriversAPI.me();
+    const u=d.user||{};
+    document.getElementById('fname').value=u.first_name||'';
+    document.getElementById('lname').value=u.last_name||'';
+    document.getElementById('phone').value=u.phone||'';
+    document.getElementById('tgid').value=u.telegram_id||'';
+    document.getElementById('car-model').value=d.car_model||'';
+    document.getElementById('car-num').value=d.car_number||'';
+    document.getElementById('car-type').value=carLabel(d.car_type);
+  }catch(e){showToast(e.message,'error');}
 });
-
-async function loadProfile() {
-  try {
-    const d = await DriversAPI.me();
-    const u = d.user || {};
-    document.getElementById('first-name').value  = u.first_name || '';
-    document.getElementById('last-name').value   = u.last_name  || '';
-    document.getElementById('phone').value       = u.phone      || '';
-    document.getElementById('telegram-id').value = u.telegram_id || '';
-    document.getElementById('car-model').value   = d.car_model  || '';
-    document.getElementById('car-number').value  = d.car_number || '';
-    document.getElementById('car-type').value    = {start:'Start',comfort:'Comfort',cargo:'Cargo'}[d.car_type] || d.car_type;
-  } catch (e) { showToast(e.message, 'error'); }
-}
-
-async function saveProfile() {
-  const btn = document.getElementById('save-profile-btn');
-  btn.disabled = true; btn.textContent = 'Saqlanmoqda...';
-  try {
+async function saveUser(){
+  const btn=document.getElementById('save-user-btn');btn.disabled=true;btn.textContent='Saqlanmoqda...';
+  try{
     await AuthAPI.updateProfile({
-      first_name:  document.getElementById('first-name').value.trim(),
-      last_name:   document.getElementById('last-name').value.trim(),
-      telegram_id: document.getElementById('telegram-id').value || null,
+      first_name:document.getElementById('fname').value.trim(),
+      last_name:document.getElementById('lname').value.trim(),
+      telegram_id:document.getElementById('tgid').value||null,
     });
-    showToast('Profil yangilandi!', 'success');
-  } catch (e) { showToast(e.message, 'error'); }
-  finally { btn.disabled = false; btn.textContent = 'Saqlash'; }
+    showToast('Profil yangilandi ✓','success');
+  }catch(e){showToast(e.message,'error');}
+  finally{btn.disabled=false;btn.textContent='💾 Saqlash';}
 }
-
-async function saveCar() {
-  const btn = document.getElementById('save-car-btn');
-  btn.disabled = true; btn.textContent = 'Saqlanmoqda...';
-  try {
+async function saveCar(){
+  const btn=document.getElementById('save-car-btn');btn.disabled=true;btn.textContent='Saqlanmoqda...';
+  try{
     await DriversAPI.updateProfile({
-      car_model:  document.getElementById('car-model').value.trim(),
-      car_number: document.getElementById('car-number').value.trim(),
+      car_model:document.getElementById('car-model').value.trim(),
+      car_number:document.getElementById('car-num').value.trim(),
     });
-    showToast('Avtomobil ma\'lumotlari yangilandi!', 'success');
-  } catch (e) { showToast(e.message, 'error'); }
-  finally { btn.disabled = false; btn.textContent = 'Avtomobilni yangilash'; }
+    showToast("Avtomobil ma'lumotlari yangilandi ✓",'success');
+  }catch(e){showToast(e.message,'error');}
+  finally{btn.disabled=false;btn.textContent='💾 Avtomobilni yangilash';}
 }
 </script>
 {% endblock %}

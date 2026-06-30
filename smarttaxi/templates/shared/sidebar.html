@@ -1,0 +1,32 @@
+<!-- Sidebar — {% block sidebar_role %}{% endblock %} -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <a href="/" class="sidebar-logo">
+      <div class="logo-icon">🚕</div>
+      SmartTaxi
+    </a>
+  </div>
+
+  <div class="sidebar-user" id="sidebar-user">
+    <div class="sidebar-avatar" id="sidebar-avatar">?</div>
+    <div class="sidebar-user-info">
+      <div class="sidebar-user-name" id="sidebar-name">Yuklanmoqda...</div>
+      <div class="sidebar-user-role" id="sidebar-role">—</div>
+    </div>
+  </div>
+
+  <nav class="sidebar-nav">
+    {% block sidebar_nav %}{% endblock %}
+  </nav>
+
+  <div class="sidebar-footer">
+    <button onclick="logout()" class="nav-link" style="color:var(--red);">
+      <span class="nav-icon">🚪</span> Chiqish
+    </button>
+  </div>
+</aside>
+
+<!-- Mobile overlay -->
+<div id="sidebar-overlay" onclick="closeSidebar()"
+  style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:99;backdrop-filter:blur(3px);">
+</div>

@@ -1,137 +1,124 @@
 {% extends "shared/base.html" %}
 {% block title %}Hamyon — SmartTaxi{% endblock %}
-{% block navbar %}{% endblock %}
-{% block main_class %}{% endblock %}
-
-{% block content %}
-<aside class="sidebar">
-  <div class="text-primary font-bold text-lg mb-6 px-2">🚕 SmartTaxi</div>
-  <a href="/driver/" class="sidebar-link">🏠 Asosiy</a>
-  <a href="/driver/orders/" class="sidebar-link">📋 Buyurtmalar</a>
-  <a href="/driver/wallet/" class="sidebar-link active">💳 Hamyon</a>
-  <a href="/driver/profile/" class="sidebar-link">👤 Profil</a>
-  <div class="mt-auto pt-4 border-t border-dark-border">
-    <button onclick="logout()" class="sidebar-link w-full text-left text-danger hover:bg-red-900/20">🚪 Chiqish</button>
-  </div>
-</aside>
-
-<div class="sidebar-content">
-  <h1 class="text-xl font-bold mb-6">💳 Hamyon</h1>
-
-  <!-- Balance card -->
-  <div class="card mb-6 bg-gradient-to-r from-dark-card to-dark-border border-primary/30">
-    <p class="text-gray-400 text-sm">Joriy balans</p>
-    <p class="text-4xl font-bold text-primary mt-1" id="balance-amount">—</p>
-    <p class="text-gray-500 text-xs mt-2">Minimal balans: 5 000 so'm (online bo'lish uchun)</p>
+{% block sidebar_nav %}
+<a href="/driver/" class="nav-link"><span class="nav-icon">🏠</span> Bosh sahifa</a>
+<a href="/driver/orders/" class="nav-link"><span class="nav-icon">📋</span> Buyurtmalar</a>
+<a href="/driver/wallet/" class="nav-link active"><span class="nav-icon">💳</span> Hamyon</a>
+<a href="/driver/profile/" class="nav-link"><span class="nav-icon">👤</span> Profil</a>
+{% endblock %}
+{% block body %}
+{% include "shared/sidebar.html" %}
+<div class="sidebar-content" style="max-width:800px;">
+  <div class="page-header">
+    <h1><div class="page-title-icon">💳</div>Hamyon</h1>
   </div>
 
-  <!-- Top up form -->
+  <!-- Wallet card -->
+  <div class="wallet-card mb-6">
+    <div style="font-size:0.75rem;color:rgba(245,166,35,0.7);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.5rem;">
+      Joriy balans
+    </div>
+    <div class="wallet-amount" id="balance">—</div>
+    <div style="margin-top:1.5rem;display:flex;align-items:center;gap:12px;">
+      <div style="background:rgba(245,166,35,0.1);border:1px solid rgba(245,166,35,0.2);border-radius:99px;
+                  padding:4px 14px;font-size:0.75rem;color:var(--gold);">
+        🚕 SmartTaxi
+      </div>
+      <div style="color:rgba(245,166,35,0.5);font-size:0.78rem;" id="wallet-phone">—</div>
+    </div>
+  </div>
+
+  <!-- Top up -->
   <div class="card mb-6">
-    <h2 class="font-semibold mb-4">💰 Balans to'ldirish</h2>
-    <div class="grid grid-cols-3 gap-2 mb-4" id="quick-amounts">
-      <button onclick="setAmount(50000)"  class="btn btn-outline text-sm">50 000</button>
-      <button onclick="setAmount(100000)" class="btn btn-outline text-sm">100 000</button>
-      <button onclick="setAmount(200000)" class="btn btn-outline text-sm">200 000</button>
+    <h2 style="margin-bottom:1.25rem;">💰 Balans to'ldirish</h2>
+
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:1rem;">
+      <button onclick="setAmt(20000)"  class="btn btn-outline btn-sm">20 000</button>
+      <button onclick="setAmt(50000)"  class="btn btn-outline btn-sm">50 000</button>
+      <button onclick="setAmt(100000)" class="btn btn-outline btn-sm">100 000</button>
+      <button onclick="setAmt(200000)" class="btn btn-outline btn-sm">200 000</button>
     </div>
-    <input id="topup-amount" type="number" class="input mb-3" placeholder="Miqdor (so'm)" min="10000" />
-    <div class="flex gap-3 mb-4">
-      <label class="flex items-center gap-2 cursor-pointer">
-        <input type="radio" name="pay-type" value="qr" checked class="accent-primary" />
-        <span class="text-sm">📱 QR (Click/Payme)</span>
+
+    <div class="form-group mb-4">
+      <label class="form-label">Miqdor (so'm)</label>
+      <input id="topup-amt" type="number" class="input" placeholder="Miqdor kiriting..." min="10000" />
+    </div>
+
+    <div style="display:flex;gap:1.5rem;margin-bottom:1.25rem;">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:0.875rem;">
+        <input type="radio" name="ptype" value="qr" checked style="accent-color:var(--gold);width:16px;height:16px;" />
+        📱 Click / Payme (QR)
       </label>
-      <label class="flex items-center gap-2 cursor-pointer">
-        <input type="radio" name="pay-type" value="cash" class="accent-primary" />
-        <span class="text-sm">💵 Naqd</span>
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:0.875rem;">
+        <input type="radio" name="ptype" value="cash" style="accent-color:var(--gold);width:16px;height:16px;" />
+        💵 Naqd pul
       </label>
     </div>
-    <button onclick="topUp()" class="btn btn-primary w-full" id="topup-btn">To'ldirish</button>
+
+    <button onclick="topup()" class="btn btn-primary btn-block" id="topup-btn">
+      💳 To'ldirish
+    </button>
   </div>
 
   <!-- Transactions -->
   <div class="card">
-    <h2 class="font-semibold mb-4">📜 Tranzaksiyalar</h2>
-    <div id="tx-loading" class="flex justify-center py-8"><div class="spinner"></div></div>
-    <div id="tx-list" class="hidden space-y-2"></div>
-    <p id="tx-empty" class="text-gray-500 text-center py-6 hidden">Tranzaksiyalar yo'q</p>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;">
+      <h2>Tranzaksiyalar tarixi</h2>
+    </div>
+    <div id="tx-loading" style="display:flex;justify-content:center;padding:2rem;"><div class="spinner"></div></div>
+    <div id="tx-list"></div>
+    <div id="tx-empty" style="display:none;" class="empty-state">
+      <div class="empty-icon">💳</div><p>Tranzaksiyalar yo'q</p>
+    </div>
   </div>
 </div>
 {% endblock %}
-
 {% block extra_js %}
 <script>
-document.addEventListener('DOMContentLoaded', async () => {
-  if (!requireAuth(['driver'])) return;
-  await loadWallet();
-  await loadTransactions();
+document.addEventListener('DOMContentLoaded',async()=>{
+  if(!requireAuth(['driver']))return;
+  initSidebarUser();
+  const u=JSON.parse(localStorage.getItem('st_user')||'{}');
+  document.getElementById('wallet-phone').textContent=u.phone||'';
+  await Promise.all([loadBalance(),loadTx()]);
 });
-
-async function loadWallet() {
-  try {
-    const data = await WalletAPI.getBalance();
-    document.getElementById('balance-amount').textContent =
-      Number(data.balance).toLocaleString('uz') + ' so\'m';
-  } catch (e) { showToast(e.message, 'error'); }
+async function loadBalance(){
+  try{const d=await WalletAPI.getBalance();document.getElementById('balance').textContent=fmoney(d.balance);}
+  catch(e){showToast(e.message,'error');}
 }
-
-async function loadTransactions() {
-  const loading = document.getElementById('tx-loading');
-  const list    = document.getElementById('tx-list');
-  const empty   = document.getElementById('tx-empty');
-  try {
-    const res = await WalletAPI.transactions();
-    const txs = res.results || res;
-    loading.classList.add('hidden');
-    if (!txs.length) { empty.classList.remove('hidden'); return; }
-    list.classList.remove('hidden');
-    list.innerHTML = txs.map(tx => {
-      const isIn = tx.amount > 0;
-      return `
-        <div class="flex items-center justify-between py-3 border-b border-dark-border last:border-0">
-          <div class="flex items-center gap-3">
-            <span class="text-2xl">${isIn ? '⬆️' : '⬇️'}</span>
-            <div>
-              <p class="text-sm font-medium">${tx.description || (isIn ? 'Kirim' : 'Chiqim')}</p>
-              <p class="text-xs text-gray-400">${formatDate(tx.created_at)}</p>
-            </div>
-          </div>
-          <span class="font-bold ${isIn ? 'text-success' : 'text-danger'}">
-            ${isIn ? '+' : ''}${Number(tx.amount).toLocaleString('uz')} so'm
-          </span>
+function setAmt(v){document.getElementById('topup-amt').value=v;}
+async function topup(){
+  const amt=Number(document.getElementById('topup-amt').value);
+  const pt=document.querySelector('input[name="ptype"]:checked').value;
+  if(!amt||amt<10000){showToast("Minimal: 10 000 so'm",'warn');return;}
+  const btn=document.getElementById('topup-btn');
+  btn.disabled=true;btn.textContent='Bajarilmoqda...';
+  try{
+    await WalletAPI.topUp(amt,pt);
+    showToast("Balans muvaffaqiyatli to'ldirildi! 🎉",'success');
+    document.getElementById('topup-amt').value='';
+    await Promise.all([loadBalance(),loadTx()]);
+  }catch(e){showToast(e.message,'error');}
+  finally{btn.disabled=false;btn.textContent="💳 To'ldirish";}
+}
+async function loadTx(){
+  try{
+    const res=await WalletAPI.transactions();
+    const txs=res.results||res;
+    document.getElementById('tx-loading').style.display='none';
+    if(!txs.length){document.getElementById('tx-empty').style.display='block';return;}
+    document.getElementById('tx-list').innerHTML=txs.map(t=>{
+      const isIn=Number(t.amount)>0;
+      return`<div class="tx-item">
+        <div class="tx-icon ${isIn?'in':'out'}">${isIn?'⬆️':'⬇️'}</div>
+        <div class="tx-desc">
+          <div class="tx-title">${t.description||(isIn?'Kirim':'Chiqim')}</div>
+          <div class="tx-date">${fdate(t.created_at)}</div>
         </div>
-      `;
+        <div class="tx-amount ${isIn?'in':'out'}">${isIn?'+':''}${Number(t.amount).toLocaleString('uz-UZ')} so'm</div>
+      </div>`;
     }).join('');
-  } catch (e) {
-    loading.classList.add('hidden');
-    showToast(e.message, 'error');
-  }
+  }catch(e){document.getElementById('tx-loading').style.display='none';showToast(e.message,'error');}
 }
-
-function setAmount(val) {
-  document.getElementById('topup-amount').value = val;
-}
-
-async function topUp() {
-  const amount = Number(document.getElementById('topup-amount').value);
-  const payType = document.querySelector('input[name="pay-type"]:checked').value;
-
-  if (!amount || amount < 10000) {
-    showToast('Minimal miqdor: 10 000 so\'m', 'error'); return;
-  }
-  const btn = document.getElementById('topup-btn');
-  btn.disabled = true; btn.textContent = 'Bajarilmoqda...';
-  try {
-    await WalletAPI.topUp(amount, payType);
-    showToast('Muvaffaqiyatli to\'ldirildi!', 'success');
-    document.getElementById('topup-amount').value = '';
-    await loadWallet();
-    await loadTransactions();
-  } catch (e) {
-    showToast(e.message, 'error');
-  } finally {
-    btn.disabled = false; btn.textContent = 'To\'ldirish';
-  }
-}
-
-function formatDate(d) { return d ? new Date(d).toLocaleString('uz') : '—'; }
 </script>
 {% endblock %}

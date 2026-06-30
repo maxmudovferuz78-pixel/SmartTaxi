@@ -1,56 +1,136 @@
 {% extends "shared/base.html" %}
 {% block title %}Kirish — SmartTaxi{% endblock %}
-{% block navbar %}{% endblock %}
 
-{% block main_class %}min-h-screen flex items-center justify-center bg-dark px-4{% endblock %}
+{% block body %}
+<!-- Animated background -->
+<div class="taxi-hero-bg"></div>
+<div class="taxi-hero-grid"></div>
+<div class="road-lines" id="road-lines"></div>
 
-{% block content %}
-<div class="w-full max-w-md">
-  <!-- Logo -->
-  <div class="text-center mb-8">
-    <div class="text-5xl mb-2">🚕</div>
-    <h1 class="text-2xl font-bold text-white">SmartTaxi</h1>
-    <p class="text-gray-400 text-sm mt-1">O'zbekiston taxi xizmati</p>
-  </div>
+<div style="min-height:100vh;display:flex;align-items:stretch;">
 
-  <!-- Step 1: Telefon -->
-  <div id="step-phone" class="card">
-    <h2 class="text-lg font-semibold mb-1">Kirish</h2>
-    <p class="text-gray-400 text-sm mb-5">Telefon raqamingizga SMS kod yuboriladi</p>
+  <!-- Left: Visual panel -->
+  <div style="flex:1;display:flex;flex-direction:column;justify-content:center;padding:3rem;position:relative;overflow:hidden;"
+       class="hidden-mobile">
 
-    <label class="text-xs text-gray-400 font-medium mb-1 block">Telefon raqam</label>
-    <input id="phone-input" type="tel" class="input mb-4" placeholder="+998901234567" maxlength="13" />
-
-    <button id="send-otp-btn" onclick="sendOtp()" class="btn btn-primary w-full">
-      SMS kod yuborish
-    </button>
-    <p id="phone-error" class="text-danger text-xs mt-2 hidden"></p>
-  </div>
-
-  <!-- Step 2: OTP -->
-  <div id="step-otp" class="card hidden">
-    <h2 class="text-lg font-semibold mb-1">SMS kodni kiriting</h2>
-    <p id="otp-hint" class="text-gray-400 text-sm mb-5"></p>
-
-    <div class="flex gap-3 justify-center mb-5">
-      <input class="otp-input" maxlength="1" id="o0" oninput="otpMove(this,1)" onkeydown="otpBack(event,this,null)" />
-      <input class="otp-input" maxlength="1" id="o1" oninput="otpMove(this,2)" onkeydown="otpBack(event,this,0)" />
-      <input class="otp-input" maxlength="1" id="o2" oninput="otpMove(this,3)" onkeydown="otpBack(event,this,1)" />
-      <input class="otp-input" maxlength="1" id="o3" oninput="otpMove(this,4)" onkeydown="otpBack(event,this,2)" />
-      <input class="otp-input" maxlength="1" id="o4" oninput="otpMove(this,5)" onkeydown="otpBack(event,this,3)" />
-      <input class="otp-input" maxlength="1" id="o5" oninput="otpSubmit(this)"  onkeydown="otpBack(event,this,4)" />
+    <!-- Big taxi emoji decoration -->
+    <div style="position:absolute;right:-2rem;top:50%;transform:translateY(-50%);font-size:18rem;opacity:0.04;line-height:1;">
+      🚕
     </div>
 
-    <button id="verify-btn" onclick="verifyOtp()" class="btn btn-primary w-full mb-3">
-      Tasdiqlash
-    </button>
-    <button onclick="backToPhone()" class="btn btn-ghost w-full text-xs">
-      ← Telefon raqamni o'zgartirish
-    </button>
-    <p id="otp-error" class="text-danger text-xs mt-2 hidden"></p>
-    <p id="countdown" class="text-gray-500 text-xs text-center mt-2"></p>
+    <div style="position:relative;max-width:480px;">
+      <div style="display:inline-flex;align-items:center;gap:8px;background:var(--gold-dim);border:1px solid var(--border2);
+                  border-radius:99px;padding:6px 16px;font-size:0.75rem;font-weight:700;color:var(--gold);
+                  letter-spacing:0.08em;text-transform:uppercase;margin-bottom:2rem;">
+        🟢 Faol platforma
+      </div>
+
+      <h1 style="font-family:'Syne',sans-serif;font-size:3.5rem;font-weight:800;line-height:1.1;
+                 letter-spacing:-0.03em;margin-bottom:1.5rem;">
+        O'zbekistonning<br/>
+        <span style="color:var(--gold);">eng tezkor</span><br/>
+        taxi platformasi
+      </h1>
+
+      <p style="color:var(--text2);font-size:1rem;line-height:1.7;margin-bottom:2.5rem;">
+        Bir marta kiring — haydovchi, yo'lovchi yoki admin sifatida platforma imkoniyatlaridan to'liq foydalaning.
+      </p>
+
+      <!-- Stats row -->
+      <div style="display:flex;gap:2rem;">
+        <div>
+          <div style="font-family:'Syne',sans-serif;font-size:1.75rem;font-weight:800;color:var(--gold);">1,200+</div>
+          <div style="font-size:0.75rem;color:var(--text2);">Haydovchilar</div>
+        </div>
+        <div>
+          <div style="font-family:'Syne',sans-serif;font-size:1.75rem;font-weight:800;color:var(--gold);">50K+</div>
+          <div style="font-size:0.75rem;color:var(--text2);">Buyurtmalar</div>
+        </div>
+        <div>
+          <div style="font-family:'Syne',sans-serif;font-size:1.75rem;font-weight:800;color:var(--gold);">4.9⭐</div>
+          <div style="font-size:0.75rem;color:var(--text2);">Reyting</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right: Login form -->
+  <div style="width:100%;max-width:460px;display:flex;flex-direction:column;justify-content:center;
+              padding:2.5rem;background:var(--bg2);border-left:1px solid var(--border);">
+
+    <div style="margin-bottom:2.5rem;">
+      <a href="/" style="display:flex;align-items:center;gap:10px;text-decoration:none;margin-bottom:2rem;">
+        <div style="width:40px;height:40px;background:var(--gold-dim);border:1px solid var(--border2);
+                    border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;">
+          🚕
+        </div>
+        <span style="font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:800;color:var(--gold);">SmartTaxi</span>
+      </a>
+      <h2 style="font-size:1.5rem;font-weight:700;margin-bottom:0.5rem;">Xush kelibsiz!</h2>
+      <p style="color:var(--text2);font-size:0.875rem;">Telefon raqamingiz orqali kiring</p>
+    </div>
+
+    <!-- STEP 1: Phone -->
+    <div id="step-phone">
+      <div class="form-group mb-4">
+        <label class="form-label">Telefon raqam</label>
+        <div class="input-icon-wrap">
+          <span class="icon">📱</span>
+          <input id="phone-input" type="tel" class="input" placeholder="+998 90 123 45 67" maxlength="13" />
+        </div>
+      </div>
+
+      <button id="send-btn" onclick="sendOtp()" class="btn btn-primary btn-block btn-lg" style="margin-bottom:1rem;">
+        Kodni yuborish →
+      </button>
+
+      <p id="phone-err" class="hidden" style="color:var(--red);font-size:0.8rem;margin-top:0.5rem;"></p>
+
+      <p style="color:var(--text3);font-size:0.75rem;text-align:center;margin-top:1.5rem;line-height:1.6;">
+        Kirish orqali siz SmartTaxi <span style="color:var(--gold);">Foydalanish shartlari</span>ga rozilik bildirasiz
+      </p>
+    </div>
+
+    <!-- STEP 2: OTP -->
+    <div id="step-otp" class="hidden">
+      <div style="text-align:center;margin-bottom:2rem;">
+        <div style="font-size:3rem;margin-bottom:0.75rem;">📩</div>
+        <h3 style="font-size:1rem;font-weight:600;margin-bottom:0.5rem;">SMS kod yuborildi</h3>
+        <p id="otp-hint" style="color:var(--text2);font-size:0.85rem;"></p>
+      </div>
+
+      <div class="otp-wrap mb-4">
+        <input class="otp-input" maxlength="1" id="o0" oninput="otpMove(this,1)"   onkeydown="otpBack(event,this,null)" />
+        <input class="otp-input" maxlength="1" id="o1" oninput="otpMove(this,2)"   onkeydown="otpBack(event,this,0)" />
+        <input class="otp-input" maxlength="1" id="o2" oninput="otpMove(this,3)"   onkeydown="otpBack(event,this,1)" />
+        <input class="otp-input" maxlength="1" id="o3" oninput="otpMove(this,4)"   onkeydown="otpBack(event,this,2)" />
+        <input class="otp-input" maxlength="1" id="o4" oninput="otpMove(this,5)"   onkeydown="otpBack(event,this,3)" />
+        <input class="otp-input" maxlength="1" id="o5" oninput="otpLast(this)"     onkeydown="otpBack(event,this,4)" />
+      </div>
+
+      <button id="verify-btn" onclick="verifyOtp()" class="btn btn-primary btn-block btn-lg mb-3">
+        Tasdiqlash ✓
+      </button>
+      <button onclick="backToPhone()" class="btn btn-ghost btn-block btn-sm">
+        ← Raqamni o'zgartirish
+      </button>
+
+      <p id="otp-err" class="hidden" style="color:var(--red);font-size:0.8rem;margin-top:0.75rem;text-align:center;"></p>
+
+      <div id="countdown-wrap" style="text-align:center;margin-top:1rem;">
+        <p id="countdown" style="color:var(--text3);font-size:0.8rem;"></p>
+        <button id="resend-btn" onclick="resendOtp()" class="btn btn-ghost btn-sm hidden mt-2"
+                style="color:var(--gold);">Qayta yuborish</button>
+      </div>
+    </div>
+
   </div>
 </div>
+
+<style>
+  .hidden-mobile { display:flex; }
+  @media(max-width:768px){ .hidden-mobile { display:none; } }
+</style>
 {% endblock %}
 
 {% block extra_js %}
@@ -58,117 +138,116 @@
 let currentPhone = '';
 let countdownTimer = null;
 
-// ─── Step 1: OTP yuborish ────────────────────────────────────────
+/* Road lines animation */
+const rl = document.getElementById('road-lines');
+if (rl) {
+  for (let i = 0; i < 8; i++) {
+    const l = document.createElement('div');
+    l.className = 'road-line';
+    l.style.left = (10 + i * 12) + '%';
+    l.style.animationDelay = (Math.random() * 2) + 's';
+    l.style.animationDuration = (1.5 + Math.random()) + 's';
+    rl.appendChild(l);
+  }
+}
+
 async function sendOtp() {
   const phone = document.getElementById('phone-input').value.trim();
-  const err   = document.getElementById('phone-error');
+  const err   = document.getElementById('phone-err');
   err.classList.add('hidden');
 
   if (!/^\+998\d{9}$/.test(phone)) {
-    err.textContent = 'Noto\'g\'ri format. Masalan: +998901234567';
-    err.classList.remove('hidden');
-    return;
+    err.textContent = "Noto'g'ri format. Masalan: +998901234567";
+    err.classList.remove('hidden'); return;
   }
 
-  const btn = document.getElementById('send-otp-btn');
+  const btn = document.getElementById('send-btn');
   btn.disabled = true;
-  btn.textContent = 'Yuborilmoqda...';
+  btn.innerHTML = '<span class="spinner-sm" style="border-color:rgba(0,0,0,0.3);border-top-color:#000;width:16px;height:16px;border-width:2px;border-style:solid;border-radius:50%;animation:spin 0.6s linear infinite;display:inline-block;"></span> Yuborilmoqda...';
 
   try {
     const res = await AuthAPI.sendOtp(phone);
     currentPhone = phone;
-
-    // DEV muhitda kodni ko'rsatamiz
-    if (res && res.dev_code) {
-      showToast(`DEV kod: ${res.dev_code}`, 'info');
-    }
-
+    if (res?.dev_code) showToast('DEV kod: ' + res.dev_code, 'info');
     document.getElementById('step-phone').classList.add('hidden');
     document.getElementById('step-otp').classList.remove('hidden');
-    document.getElementById('otp-hint').textContent = `+${phone.replace('+', '')} raqamiga yuborildi`;
+    document.getElementById('otp-hint').textContent = phone + ' raqamiga yuborildi';
     document.getElementById('o0').focus();
     startCountdown(60);
-  } catch (e) {
+  } catch(e) {
     err.textContent = e.message || 'Xato yuz berdi';
     err.classList.remove('hidden');
   } finally {
-    btn.disabled = false;
-    btn.textContent = 'SMS kod yuborish';
+    btn.disabled = false; btn.textContent = 'Kodni yuborish →';
   }
 }
 
-// ─── Step 2: OTP tasdiqlash ──────────────────────────────────────
 async function verifyOtp() {
-  const code = [0,1,2,3,4,5].map(i => document.getElementById(`o${i}`).value).join('');
-  const err  = document.getElementById('otp-error');
+  const code = [0,1,2,3,4,5].map(i => document.getElementById('o'+i).value).join('');
+  const err  = document.getElementById('otp-err');
   err.classList.add('hidden');
 
   if (code.length < 6) {
-    err.textContent = '6 xonali kodni kiriting';
-    err.classList.remove('hidden');
-    return;
+    err.textContent = '6 xonali kodni to\'liq kiriting';
+    err.classList.remove('hidden'); return;
   }
 
   const btn = document.getElementById('verify-btn');
-  btn.disabled = true;
-  btn.textContent = 'Tekshirilmoqda...';
+  btn.disabled = true; btn.textContent = 'Tekshirilmoqda...';
 
   try {
     await AuthAPI.verifyOtp(currentPhone, code);
     const user = await AuthAPI.me();
-
     clearInterval(countdownTimer);
-    showToast('Muvaffaqiyatli kirdingiz!', 'success');
-
-    // Rolga qarab yo'naltirish
+    showToast('Muvaffaqiyatli kirdingiz! 🎉', 'success');
     setTimeout(() => {
-      const role = user.role || 'client';
-      const routes = { admin: '/admin/', operator: '/admin/', driver: '/driver/', client: '/passenger/' };
-      window.location.href = routes[role] || '/';
+      const r = user.role || 'client';
+      const map = { admin:'/admin-panel/', operator:'/admin-panel/', driver:'/driver/', client:'/passenger/' };
+      window.location.href = map[r] || '/';
     }, 800);
-  } catch (e) {
-    err.textContent = e.message || 'Noto\'g\'ri kod';
+  } catch(e) {
+    err.textContent = e.message || "Noto'g'ri kod";
     err.classList.remove('hidden');
-    [0,1,2,3,4,5].forEach(i => document.getElementById(`o${i}`).value = '');
+    [0,1,2,3,4,5].forEach(i => { const el=document.getElementById('o'+i); el.value=''; el.classList.remove('filled'); });
     document.getElementById('o0').focus();
   } finally {
-    btn.disabled = false;
-    btn.textContent = 'Tasdiqlash';
+    btn.disabled = false; btn.textContent = 'Tasdiqlash ✓';
   }
 }
 
-// ─── OTP input helpers ───────────────────────────────────────────
 function otpMove(el, next) {
-  if (el.value && next <= 5) document.getElementById(`o${next}`).focus();
+  if (el.value) { el.classList.add('filled'); if (next<=5) document.getElementById('o'+next).focus(); }
+  else el.classList.remove('filled');
 }
+function otpLast(el) { if (el.value) { el.classList.add('filled'); verifyOtp(); } else el.classList.remove('filled'); }
 function otpBack(e, el, prev) {
-  if (e.key === 'Backspace' && !el.value && prev !== null)
-    document.getElementById(`o${prev}`).focus();
+  if (e.key==='Backspace' && !el.value && prev!==null) { document.getElementById('o'+prev).focus(); }
 }
-function otpSubmit(el) { if (el.value) verifyOtp(); }
-
 function backToPhone() {
   document.getElementById('step-otp').classList.add('hidden');
   document.getElementById('step-phone').classList.remove('hidden');
   clearInterval(countdownTimer);
 }
+async function resendOtp() { await sendOtp(); }
 
 function startCountdown(sec) {
-  const el = document.getElementById('countdown');
+  const el     = document.getElementById('countdown');
+  const resend = document.getElementById('resend-btn');
+  resend.classList.add('hidden');
   let left = sec;
-  el.textContent = `Qayta yuborish: ${left} sek`;
+  el.textContent = `Qayta yuborish mumkin: ${left} soniya`;
   countdownTimer = setInterval(() => {
     left--;
     if (left <= 0) {
       clearInterval(countdownTimer);
       el.textContent = '';
+      resend.classList.remove('hidden');
     } else {
-      el.textContent = `Qayta yuborish: ${left} sek`;
+      el.textContent = `Qayta yuborish mumkin: ${left} soniya`;
     }
   }, 1000);
 }
 
-// Enter tugmasi
 document.addEventListener('keydown', e => {
   if (e.key === 'Enter') {
     if (!document.getElementById('step-phone').classList.contains('hidden')) sendOtp();

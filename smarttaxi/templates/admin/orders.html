@@ -1,188 +1,105 @@
 {% extends "shared/base.html" %}
 {% block title %}Buyurtmalar — SmartTaxi Admin{% endblock %}
-{% block navbar %}{% endblock %}
-{% block main_class %}{% endblock %}
-
-{% block content %}
-<aside class="sidebar">
-  <div class="text-primary font-bold text-lg mb-6 px-2">🚕 Admin</div>
-  <a href="/admin/" class="sidebar-link">📊 Dashboard</a>
-  <a href="/admin/drivers/" class="sidebar-link">🚗 Haydovchilar</a>
-  <a href="/admin/orders/" class="sidebar-link active">📋 Buyurtmalar</a>
-  <a href="/admin/tariffs/" class="sidebar-link">💰 Tariflar</a>
-  <div class="mt-auto pt-4 border-t border-dark-border">
-    <button onclick="logout()" class="sidebar-link w-full text-left text-danger hover:bg-red-900/20">🚪 Chiqish</button>
-  </div>
-</aside>
-
+{% block sidebar_nav %}
+<a href="/admin-panel/" class="nav-link"><span class="nav-icon">📊</span> Dashboard</a>
+<a href="/admin-panel/drivers/" class="nav-link"><span class="nav-icon">🚗</span> Haydovchilar</a>
+<a href="/admin-panel/orders/" class="nav-link active"><span class="nav-icon">📋</span> Buyurtmalar</a>
+<a href="/admin-panel/tariffs/" class="nav-link"><span class="nav-icon">💰</span> Tariflar</a>
+{% endblock %}
+{% block body %}
+{% include "shared/sidebar.html" %}
 <div class="sidebar-content">
-  <div class="flex items-center justify-between mb-6">
-    <h1 class="text-xl font-bold">📋 Buyurtmalar</h1>
-  </div>
-
-  <!-- Filters -->
-  <div class="flex gap-3 mb-5 flex-wrap">
-    <select id="f-status" onchange="loadOrders()" class="input w-auto text-sm">
-      <option value="">Barcha holat</option>
-      <option value="new">Yangi</option>
-      <option value="accepted">Qabul</option>
-      <option value="arrived">Keldi</option>
-      <option value="started">Yo'lda</option>
-      <option value="done">Tugadi</option>
-      <option value="cancelled">Bekor</option>
+  <div class="page-header">
+    <h1><div class="page-title-icon">📋</div>Buyurtmalar</h1>
+    <select id="f-status" onchange="load()" class="input" style="width:auto;">
+      <option value="">Barcha holat</option><option value="new">Yangi</option><option value="accepted">Qabul</option>
+      <option value="arrived">Keldi</option><option value="started">Yo'lda</option>
+      <option value="done">Tugadi</option><option value="cancelled">Bekor</option>
     </select>
   </div>
-
-  <div id="loading" class="flex justify-center py-16"><div class="spinner"></div></div>
-  <div id="table-wrap" class="hidden card overflow-x-auto">
+  <div id="loading" style="display:flex;justify-content:center;padding:4rem;"><div class="spinner"></div></div>
+  <div class="card tbl-wrap" id="tbl-wrap" style="display:none;padding:0;">
     <table class="tbl">
-      <thead><tr>
-        <th>#</th><th>Manzil</th><th>Haydovchi</th><th>Narx</th><th>Status</th><th>Sana</th><th>Amallar</th>
-      </tr></thead>
-      <tbody id="orders-tbody"></tbody>
+      <thead><tr><th>#</th><th>Manzil</th><th>Haydovchi</th><th>Narx</th><th>Status</th><th>Sana</th><th>Amallar</th></tr></thead>
+      <tbody id="tbody"></tbody>
     </table>
   </div>
-  <p id="empty" class="text-gray-500 text-center py-16 hidden">Buyurtmalar topilmadi</p>
-  <div class="flex justify-center gap-3 mt-5" id="pagination"></div>
+  <div id="empty" style="display:none;" class="empty-state"><div class="empty-icon">📋</div><h3>Buyurtma topilmadi</h3></div>
+  <div class="pagination" id="pagination"></div>
 </div>
 
-<!-- Assign driver modal -->
-<div id="assign-modal" class="fixed inset-0 bg-black/70 z-50 hidden flex items-center justify-center p-4">
-  <div class="card w-full max-w-lg relative">
-    <button onclick="closeAssign()" class="absolute top-4 right-4 text-gray-400 hover:text-white text-xl">✕</button>
-    <h2 class="font-bold text-lg mb-4">Haydovchi biriktirish — <span id="assign-order-id"></span></h2>
-
-    <div class="mb-4">
-      <label class="text-xs text-gray-400">Qidiruv / Haydovchi ID</label>
-      <input id="driver-search" type="number" class="input mt-1" placeholder="Haydovchi ID kiriting" />
+<div class="modal-overlay" id="assign-modal">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeAssign()">✕</button>
+    <h2 style="margin-bottom:1rem;">Haydovchi biriktirish — <span id="ao-id" style="color:var(--gold);"></span></h2>
+    <div class="form-group mb-4">
+      <label class="form-label">Haydovchi ID</label>
+      <input id="drv-search" type="number" class="input" placeholder="ID kiriting yoki ro'yxatdan tanlang" />
     </div>
-
-    <div id="online-drivers-wrap">
-      <p class="text-xs text-gray-400 mb-2">Online haydovchilar:</p>
-      <div id="online-drivers-list" class="space-y-2 max-h-60 overflow-y-auto"></div>
-    </div>
-
-    <button onclick="assignDriver()" class="btn btn-primary w-full mt-5" id="assign-btn">Biriktirish</button>
+    <p style="font-size:0.75rem;color:var(--text2);margin-bottom:8px;">Online haydovchilar:</p>
+    <div id="online-drv-list" style="display:flex;flex-direction:column;gap:6px;max-height:240px;overflow-y:auto;"></div>
+    <button onclick="assignDrv()" class="btn btn-primary btn-block mt-4" id="assign-btn">Biriktirish</button>
   </div>
 </div>
 {% endblock %}
-
 {% block extra_js %}
 <script>
-let currentPage = 1;
-let currentOrderId = null;
-
-document.addEventListener('DOMContentLoaded', () => {
-  if (!requireAuth(['admin','operator'])) return;
-  loadOrders();
-});
-
-async function loadOrders(page = 1) {
-  currentPage = page;
-  const params = { page };
-  const st = document.getElementById('f-status').value;
-  if (st) params.status = st;
-
-  const loading = document.getElementById('loading');
-  const wrap    = document.getElementById('table-wrap');
-  const empty   = document.getElementById('empty');
-  loading.classList.remove('hidden'); wrap.classList.add('hidden'); empty.classList.add('hidden');
-
-  try {
-    const res    = await OrdersAPI.list(params);
-    const orders = res.results || res;
-    loading.classList.add('hidden');
-    if (!orders.length) { empty.classList.remove('hidden'); return; }
-    wrap.classList.remove('hidden');
-
-    document.getElementById('orders-tbody').innerHTML = orders.map(o => `
+let page=1, curOid=null;
+document.addEventListener('DOMContentLoaded',()=>{ if(!requireAuth(['admin','operator']))return; initSidebarUser(); load(); });
+async function load(p=1){
+  page=p;
+  const params={page}; const st=document.getElementById('f-status').value; if(st)params.status=st;
+  document.getElementById('loading').style.display='flex';
+  document.getElementById('tbl-wrap').style.display='none';
+  document.getElementById('empty').style.display='none';
+  try{
+    const res=await OrdersAPI.list(params);
+    const orders=res.results||res;
+    document.getElementById('loading').style.display='none';
+    if(!orders.length){document.getElementById('empty').style.display='block';return;}
+    document.getElementById('tbl-wrap').style.display='block';
+    document.getElementById('tbody').innerHTML=orders.map(o=>`
       <tr>
-        <td class="font-mono text-primary">#${o.id}</td>
-        <td class="max-w-xs">
-          <p class="text-xs text-gray-400">→</p>
-          <p class="text-sm truncate">${o.to_address || '—'}</p>
-        </td>
-        <td>
-          ${o.driver
-            ? `<span class="text-sm">${o.driver.first_name||''} ${o.driver.last_name||''}</span>
-               <p class="text-xs text-gray-400">${o.driver.car_number||''}</p>`
-            : '<span class="text-gray-500 text-sm">—</span>'}
-        </td>
-        <td class="font-medium">${formatMoney(o.total_fare)}</td>
+        <td style="color:var(--gold);font-weight:700;">#${o.id}</td>
+        <td style="max-width:220px;"><div style="font-size:0.72rem;color:var(--text2);">→</div><div class="truncate" style="font-size:0.85rem;">${o.to_address||'—'}</div></td>
+        <td>${o.driver?`<div style="font-size:0.82rem;">${o.driver.first_name||''} ${o.driver.last_name||''}</div><div style="font-size:0.72rem;color:var(--text2);">${o.driver.car_number||''}</div>`:'<span style="color:var(--text3);">—</span>'}</td>
+        <td style="font-weight:600;">${fmoney(o.total_fare)}</td>
         <td><span class="badge badge-${o.status}">${statusLabel(o.status)}</span></td>
-        <td class="text-gray-400 text-xs">${formatDate(o.created_at)}</td>
-        <td>
-          ${o.status === 'new'
-            ? `<button onclick="openAssign(${o.id})" class="btn btn-primary text-xs px-3 py-1">Biriktir</button>`
-            : `<button onclick="openAssign(${o.id})" class="btn btn-outline text-xs px-3 py-1">O'zgartir</button>`}
-        </td>
-      </tr>
-    `).join('');
-
-    renderPagination(res.count, res.next, res.previous);
-  } catch (e) {
-    loading.classList.add('hidden');
-    showToast(e.message, 'error');
-  }
+        <td style="color:var(--text2);font-size:0.75rem;">${fdate(o.created_at)}</td>
+        <td><button onclick="openAssign(${o.id})" class="btn ${o.status==='new'?'btn-primary':'btn-outline'} btn-sm">${o.status==='new'?'Biriktir':"O'zgartir"}</button></td>
+      </tr>`).join('');
+    renderPag(res.count,res.next,res.previous);
+  }catch(e){document.getElementById('loading').style.display='none';showToast(e.message,'error');}
 }
-
-async function openAssign(orderId) {
-  currentOrderId = orderId;
-  document.getElementById('assign-order-id').textContent = `#${orderId}`;
-  document.getElementById('driver-search').value = '';
-  document.getElementById('assign-modal').classList.remove('hidden');
-
-  // Online haydovchilarni yuklash
-  try {
-    const res     = await DriversAPI.list({ is_online: true, is_active: true });
-    const drivers = res.results || res;
-    document.getElementById('online-drivers-list').innerHTML = drivers.map(d => `
-      <div class="flex items-center justify-between py-2 border-b border-dark-border last:border-0 cursor-pointer hover:bg-dark-border/30 px-2 rounded"
-           onclick="selectDriver(${d.id})">
-        <div>
-          <span class="text-sm font-medium">${d.user?.first_name||''} ${d.user?.last_name||''}</span>
-          <span class="text-xs text-gray-400 ml-2">${d.car_number||''}</span>
-        </div>
-        <span class="badge badge-${d.car_type}">${carTypeLabel(d.car_type)}</span>
-      </div>
-    `).join('') || '<p class="text-gray-500 text-sm text-center py-4">Online haydovchi yo\'q</p>';
-  } catch {}
+async function openAssign(id){
+  curOid=id;
+  document.getElementById('ao-id').textContent='#'+id;
+  document.getElementById('drv-search').value='';
+  document.getElementById('assign-modal').classList.add('open');
+  try{
+    const res=await DriversAPI.list({is_online:true,is_active:true});
+    const drivers=res.results||res;
+    document.getElementById('online-drv-list').innerHTML=drivers.length?drivers.map(d=>`
+      <div onclick="document.getElementById('drv-search').value=${d.id}" style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;border-radius:8px;cursor:pointer;background:var(--bg3);">
+        <div style="font-size:0.82rem;"><b>${d.user?.first_name||''} ${d.user?.last_name||''}</b> <span style="color:var(--text2);">${d.car_number||''}</span></div>
+        <span class="badge badge-${d.car_type}">${carLabel(d.car_type)}</span>
+      </div>`).join(''):'<p style="text-align:center;color:var(--text3);font-size:0.85rem;padding:1rem;">Online haydovchi yo\'q</p>';
+  }catch{}
 }
-
-function selectDriver(id) {
-  document.getElementById('driver-search').value = id;
+function closeAssign(){document.getElementById('assign-modal').classList.remove('open');}
+async function assignDrv(){
+  const did=Number(document.getElementById('drv-search').value);
+  if(!did){showToast('Haydovchi ID kiriting','warn');return;}
+  const btn=document.getElementById('assign-btn');btn.disabled=true;btn.textContent='Biriktirilmoqda...';
+  try{await OrdersAPI.assignDriver(curOid,did);showToast('Haydovchi biriktirildi ✓','success');closeAssign();load(page);}
+  catch(e){showToast(e.message,'error');}
+  finally{btn.disabled=false;btn.textContent='Biriktirish';}
 }
-
-function closeAssign() { document.getElementById('assign-modal').classList.add('hidden'); }
-
-async function assignDriver() {
-  const driverId = Number(document.getElementById('driver-search').value);
-  if (!driverId) { showToast('Haydovchi ID kiriting', 'error'); return; }
-
-  const btn = document.getElementById('assign-btn');
-  btn.disabled = true; btn.textContent = 'Biriktirilmoqda...';
-  try {
-    await OrdersAPI.assignDriver(currentOrderId, driverId);
-    showToast('Haydovchi biriktirildi!', 'success');
-    closeAssign();
-    loadOrders(currentPage);
-  } catch (e) { showToast(e.message, 'error'); }
-  finally { btn.disabled = false; btn.textContent = 'Biriktirish'; }
-}
-
-function renderPagination(total, next, prev) {
-  document.getElementById('pagination').innerHTML = `
-    <button onclick="loadOrders(${currentPage-1})" ${!prev?'disabled':''} class="btn btn-outline text-sm">← Oldingi</button>
-    <span class="text-gray-400 text-sm self-center">Jami: ${total||0}</span>
-    <button onclick="loadOrders(${currentPage+1})" ${!next?'disabled':''} class="btn btn-outline text-sm">Keyingi →</button>
-  `;
-}
-
-function formatMoney(v) { return v != null ? Number(v).toLocaleString('uz') + ' so\'m' : '—'; }
-function formatDate(d)  { return d ? new Date(d).toLocaleString('uz') : '—'; }
-function carTypeLabel(t){ return {start:'Start',comfort:'Comfort',cargo:'Cargo'}[t]||t; }
-function statusLabel(s) {
-  return {new:'Yangi',accepted:'Qabul',arrived:'Keldi',started:"Yo'lda",done:'Tugadi',cancelled:'Bekor'}[s]||s;
+function renderPag(total,next,prev){
+  document.getElementById('pagination').innerHTML=`
+    <button class="page-btn" onclick="load(${page-1})" ${!prev?'disabled':''}>←</button>
+    <span class="page-info">Jami: ${total||0}</span>
+    <button class="page-btn" onclick="load(${page+1})" ${!next?'disabled':''}>→</button>`;
 }
 </script>
 {% endblock %}
